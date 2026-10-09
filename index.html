@@ -325,13 +325,20 @@ const API_URL = "https://egercwtblyjvbiomukzb.supabase.co/functions/v1/api";
 const temGoogle = /^https?:\/\//.test(API_URL);
 async function call(acao,args){
   if(!temGoogle) throw new Error("Falta configurar o endereço do servidor (API_URL) no arquivo index.html.");
-  let r;
+  let r, resp, texto="";
   try{
-    const resp=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:S.token,acao,args:args||{}})});
-    r=await resp.json();
-  }catch(e){ throw new Error("Sem conexão com o servidor. Confira a internet e tente de novo."); }
+    resp=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:S.token,acao,args:args||{}})});
+    texto=await resp.text();
+  }catch(e){ throw new Error("Sem conexão com o servidor. Confira a internet e tente de novo. ("+(e.message||e)+")"); }
+  try{ r=JSON.parse(texto); }catch(e){ r=null; }
   if(r&&r.ok) return r.data;
-  const m=(r&&r.erro)||"Erro desconhecido no servidor.";
+  let m=r&&r.erro;
+  if(!m){
+    const det=(r&&(r.message||r.msg||r.error||r.code))||texto.slice(0,160)||"sem resposta";
+    if(resp.status===401) m="O servidor recusou o acesso (401). No Supabase, abra Edge Functions › api e desligue a opção \"Verify JWT\". Detalhe: "+det;
+    else if(resp.status===404) m="A função \"api\" não foi encontrada (404). Confira o nome da função e o endereço em API_URL. Detalhe: "+det;
+    else m="Erro no servidor (HTTP "+resp.status+"): "+det;
+  }
   if(m.indexOf("SESSAO")>=0) sair("Sua sessão expirou. Entre de novo.");
   throw new Error(m.replace(/^SESSAO:\s*/,""));
 }
