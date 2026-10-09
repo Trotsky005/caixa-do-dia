@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caixa do Dia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: barra fixa com a frente (loja + caixa/financeiro/banco) e o dia; abas abaixo; cada aba é uma mesa de trabalho em 1–2 colunas. Cor da loja: Areias = areia, Barreiro = barro, Banco = petróleo. */
+:root{
+  --bg:#eceeea; --surface:#fbfcfa; --surface-2:#f2f4f0; --ink:#1b211e; --muted:#5d6862; --line:#d3d9d3;
+  --accent:#21545c; --accent-soft:#dbe8e7; --on-accent:#ffffff;
+  --areias:#a97a26; --barreiro:#9a4b32; --banco:#21545c;
+  --in:#1f7a45; --in-soft:#dff0e4; --out:#b0362b; --out-soft:#f8e2df; --warn:#8f5d00; --warn-soft:#f6ecd5;
+  --f-display:'Archivo','Arial Narrow',system-ui,sans-serif;
+  --f-body:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-num:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+  --loja:var(--areias);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121614; --surface:#1a1f1d; --surface-2:#222826; --ink:#e7ece9; --muted:#9ba7a1; --line:#313a36;
+  --accent:#74b6bb; --accent-soft:#1e3537; --on-accent:#0d1514;
+  --areias:#d9a64b; --barreiro:#d68264; --banco:#74b6bb;
+  --in:#62c78e; --in-soft:#173323; --out:#f08377; --out-soft:#3b1d1a; --warn:#e3ad40; --warn-soft:#3a2c12;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#121614; --surface:#1a1f1d; --surface-2:#222826; --ink:#e7ece9; --muted:#9ba7a1; --line:#313a36;
+  --accent:#74b6bb; --accent-soft:#1e3537; --on-accent:#0d1514;
+  --areias:#d9a64b; --barreiro:#d68264; --banco:#74b6bb;
+  --in:#62c78e; --in-soft:#173323; --out:#f08377; --out-soft:#3b1d1a; --warn:#e3ad40; --warn-soft:#3a2c12;
+  color-scheme:dark }
+html{color-scheme:light}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+[hidden]{display:none!important}
+body[data-loja="barreiro"]{--loja:var(--barreiro)}
+body[data-loja="banco"]{--loja:var(--banco)}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.muted{color:var(--muted)}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px}
+
+/* barra superior */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top::before{content:"";display:block;height:4px;background:var(--loja)}
+.top-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding-block:10px}
+.brand{display:flex;align-items:baseline;gap:8px;margin-right:auto}
+.brand h1{font-size:20px;font-weight:800}
+.brand small{font-size:12px;color:var(--muted)}
+.frentes{display:flex;flex-wrap:wrap;gap:8px}
+.grp{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface-2)}
+.grp-l{font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:0 8px 0 10px;color:var(--muted)}
+.grp button{border:0;background:transparent;padding:7px 11px;cursor:pointer;font-weight:500}
+.grp button[aria-pressed="true"]{background:var(--loja);color:#fff}
+:root[data-theme="dark"] .grp button[aria-pressed="true"]{color:#141414}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .grp button[aria-pressed="true"]{color:#141414}}
+.diasel{display:flex;align-items:center;gap:4px}
+.diasel input{padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:16px}
+.tabs{display:flex;gap:2px;overflow-x:auto}
+.tabs button{border:0;background:transparent;padding:10px 14px;cursor:pointer;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--loja)}
+.tabs svg{width:13px;height:13px;vertical-align:-1px;margin-left:4px}
+
+main{padding-block:18px 60px}
+.titlebar{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:14px}
+.titlebar h2{font-size:24px;font-weight:700}
+.titlebar .sub{color:var(--muted)}
+.banner{padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:14px;border:1px solid var(--line);background:var(--surface-2)}
+.banner.warn{background:var(--warn-soft);border-color:transparent;color:var(--ink)}
+.banner.ok{background:var(--in-soft);border-color:transparent}
+.banner.bad{background:var(--out-soft);border-color:transparent}
+
+.cols{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h3{font-size:15px;font-weight:700;margin-bottom:10px}
+.stack{display:flex;flex-direction:column;gap:12px}
+
+/* tipos de lançamento */
+.tipos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:14px}
+.tipos button{text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:8px 10px;cursor:pointer;font-size:13.5px;font-weight:500;display:flex;gap:7px;align-items:center}
+.tipos button .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.tipos button[aria-pressed="true"]{border-color:var(--ink);background:var(--surface);box-shadow:inset 0 0 0 1px var(--ink)}
+.dot.e{background:var(--in)} .dot.s{background:var(--out)} .dot.t{background:var(--accent)}
+
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted)}
+label.f > span.req::after{content:" *";color:var(--out)}
+.inp,select.inp,textarea.inp{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-weight:400;font-size:15px}
+.inp:focus,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.inp.big{font-family:var(--f-num);font-size:22px;font-weight:600;padding:8px 10px}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:480px){.row3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 14px;cursor:pointer;font-weight:600}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.loja{background:var(--loja);border-color:var(--loja);color:#fff}
+.btn.danger{color:var(--out);border-color:var(--out)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+
+/* resumo do dia */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.tile .k{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.tile .v{font-family:var(--f-num);font-size:20px;font-weight:600;margin-top:2px}
+.tile .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+.tile.e .v{color:var(--in)} .tile.s .v{color:var(--out)}
+.tile.areias{border-top:3px solid var(--areias)} .tile.barreiro{border-top:3px solid var(--barreiro)} .tile.banco{border-top:3px solid var(--banco)}
+.formas{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{display:inline-flex;gap:6px;align-items:baseline;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 10px;font-size:12.5px}
+.chip b{font-family:var(--f-num);font-weight:600}
+
+/* tabelas */
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;font-weight:600;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+td.e{color:var(--in)} td.s{color:var(--out)}
+tr.excl td{text-decoration:line-through;color:var(--muted)}
+tfoot td{font-weight:700;background:var(--surface-2)}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;background:var(--surface-2);border:1px solid var(--line)}
+.pill.e{background:var(--in-soft);color:var(--in);border-color:transparent}
+.pill.s{background:var(--out-soft);color:var(--out);border-color:transparent}
+.pill.t{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.pill.w{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.linkbtn{border:0;background:none;color:var(--out);cursor:pointer;font-size:13px;padding:0}
+.sub2{font-size:12.5px;color:var(--muted)}
+
+/* fechamento */
+.fech-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+@media (max-width:900px){.fech-grid{grid-template-columns:minmax(0,1fr)}}
+.sec-n{font-family:var(--f-num);font-size:12px;color:var(--loja);font-weight:600;margin-right:6px}
+.ced{display:grid;grid-template-columns:minmax(0,1fr) 84px minmax(0,1fr);gap:6px 10px;align-items:center;font-size:14px}
+.ced .inp{padding:6px 8px;text-align:right;font-family:var(--f-num)}
+.ced .tot{font-family:var(--f-num);text-align:right}
+.ced .lbl{display:flex;align-items:center;gap:8px}
+.nota{display:inline-block;width:26px;height:14px;border-radius:3px;border:1px solid var(--line)}
+.moeda{display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid var(--line);margin:0 6px}
+.conf td .pill{min-width:58px;text-align:center}
+.dif-ok{color:var(--in)} .dif-bad{color:var(--out)}
+
+/* contas */
+.filtros{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
+.filtros button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;cursor:pointer;font-size:13px;font-weight:500}
+.filtros button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.paypanel{background:var(--surface-2);border-top:1px dashed var(--line)}
+.paypanel .inner{display:flex;flex-wrap:wrap;gap:10px;align-items:end;padding:6px 0}
+.paypanel label.f{min-width:130px;flex:1}
+details.card summary{cursor:pointer;font-family:var(--f-display);font-weight:700}
+details.card[open] summary{margin-bottom:12px}
+
+/* histórico */
+.lock{max-width:380px;margin:40px auto}
+.histbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:14px}
+.histbar label.f{min-width:140px}
+.sect{margin-top:22px}
+.sect h3{font-size:16px;margin-bottom:8px}
+
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){#toast{transition:opacity .2s}}
+
+.loginwrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+.login{width:100%;max-width:640px;padding:28px 32px;display:flex;flex-direction:column;gap:16px}
+.login .stack{gap:14px}
+.login-brand{display:flex;flex-direction:column;gap:2px;border-top:4px solid var(--areias);padding-top:12px}
+.login-brand h1{font-size:26px;font-weight:800}
+.lbl-up{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 auto;min-width:110px;white-space:nowrap;padding-inline:16px;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:10px;cursor:pointer;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.fixa{font-family:var(--f-display);font-weight:700;padding:6px 12px;border-radius:999px;background:var(--loja);color:#fff}
+.subcard{background:var(--surface-2);padding:12px}
+.trocov{font-size:22px;font-weight:600;color:var(--ink);padding:8px 0}
+a.btn{text-decoration:none;display:inline-block}
+.pwd{position:relative}
+.pwd .inp{padding-right:110px}
+.pwd-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--muted);cursor:pointer;font-weight:600;font-size:13px;padding:6px 8px;border-radius:7px}
+.pwd-btn:hover{color:var(--ink);background:var(--surface-2)}
+.pwd-btn svg{width:18px;height:18px}
+.pwd-btn[aria-pressed="true"] svg{opacity:.55}
+@media (max-width:480px){.login{padding:20px 16px}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+<div id="login" class="loginwrap">
+  <div class="card login">
+    <div class="login-brand"><h1>Caixa do Dia</h1><span class="muted">Areias · Barreiro · Banco</span></div>
+    <form id="f-login" class="stack" hidden>
+      <div class="f"><span class="lbl-up">Cidade</span>
+        <div class="seg" id="lg-cidade"><button type="button" data-lgc="areias">Areias</button><button type="button" data-lgc="barreiro">Barreiro</button><button type="button" data-lgc="banco">Banco</button><button type="button" data-lgc="admin">Administrador</button></div>
+      </div>
+      <div class="f" id="lg-sub-box" hidden><span class="lbl-up">Acesso</span>
+        <div class="seg" id="lg-sub"><button type="button" data-lgs="cx">Caixa</button><button type="button" data-lgs="fin">Financeiro</button></div>
+      </div>
+      <label class="f" for="lg-senha"><span>Senha</span></label>
+      <div class="pwd"><input class="inp" type="password" id="lg-senha" autocomplete="current-password"><button type="button" class="pwd-btn" data-act="ver-senha" aria-label="Mostrar senha" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Mostrar</span></button></div>
+      <button class="btn pri" type="submit" id="lg-entrar">Entrar</button>
+    </form>
+    <p class="hint" id="lg-msg"></p>
+  </div>
+</div>
+
+<div id="app" hidden>
+<header class="top">
+  <div class="wrap top-row">
+    <div class="brand"><h1>Caixa do Dia</h1><small id="conn"></small></div>
+    <nav class="frentes" aria-label="Frente" id="sel-frentes">
+      <div class="grp"><span class="grp-l">Cidade</span><button data-cidade="areias">Areias</button><button data-cidade="barreiro">Barreiro</button><button data-cidade="banco">Banco</button></div>
+      <div class="grp" id="sel-sub"><button data-sub="cx">Caixa</button><button data-sub="fin">Financeiro</button></div>
+    </nav>
+    <div class="fixa" id="frente-fixa" hidden></div>
+    <div class="diasel">
+      <button class="iconbtn" data-act="dia-prev" aria-label="Dia anterior">‹</button>
+      <input type="date" id="dia" aria-label="Dia">
+      <button class="iconbtn" data-act="dia-next" aria-label="Próximo dia">›</button>
+    </div>
+    <button class="btn sm" data-act="sair">Sair</button>
+  </div>
+  <div class="wrap tabs" role="tablist">
+    <button role="tab" data-tab="lancar">Lançamentos</button>
+    <button role="tab" data-tab="fech">Fechamento</button>
+    <button role="tab" data-tab="contas">Contas a pagar</button>
+    <button role="tab" data-tab="receber">Boletos a receber</button>
+    <button role="tab" data-tab="hist" id="tab-hist">Histórico</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="global-banner"></div>
+  <section id="v-lancar" data-view="lancar">
+    <div class="titlebar"><h2 id="lanc-title"></h2><span class="sub" id="lanc-sub"></span></div>
+    <div id="lanc-banner"></div>
+    <div class="cols">
+      <div class="card">
+        <div class="tipos" id="tipos"></div>
+        <form id="f-lanc" class="stack" autocomplete="off"></form>
+      </div>
+      <div style="min-width:0">
+        <div id="banco-ajuste"></div>
+        <div class="tiles" id="dia-tiles"></div>
+        <div class="formas" id="dia-formas"></div>
+        <div class="tablewrap" id="lanc-tabela"><div class="empty">Carregando…</div></div>
+      </div>
+    </div>
+  </section>
+  <section id="v-fech" data-view="fech" hidden></section>
+  <section id="v-contas" data-view="contas" hidden></section>
+  <section id="v-receber" data-view="receber" hidden></section>
+  <section id="v-hist" data-view="hist" hidden></section>
+</main>
+</div>
+<div id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+// ---------- constantes ----------
+const FRENTES = [
+  {id:"cx-areias",   nome:"Caixa Areias",        loja:"areias",   tipo:"caixa"},
+  {id:"fin-areias",  nome:"Financeiro Areias",   loja:"areias",   tipo:"fin"},
+  {id:"cx-barreiro", nome:"Caixa Barreiro",      loja:"barreiro", tipo:"caixa"},
+  {id:"fin-barreiro",nome:"Financeiro Barreiro", loja:"barreiro", tipo:"fin"},
+  {id:"banco",       nome:"Banco",               loja:"banco",    tipo:"banco"}
+];
+const FR = Object.fromEntries(FRENTES.map(f=>[f.id,f]));
+const PERFIS = Object.assign({admin:"Administrador"}, Object.fromEntries(FRENTES.map(f=>[f.id,f.nome])));
+const TIPOS = {
+  receb:   {nome:"Recebimento",            cls:"e", sent:"E"},
+  boleto:  {nome:"Boleto emitido",         cls:"t", sent:"E"},
+  conta:   {nome:"Pagar conta",            cls:"s", sent:"S"},
+  sangria: {nome:"Sangria",                cls:"s", sent:"S"},
+  adiant:  {nome:"Adiantamento",           cls:"s", sent:"S"},
+  salario: {nome:"Pagamento funcionário",  cls:"s", sent:"S"},
+  despesa: {nome:"Outra saída",            cls:"s", sent:"S"},
+  transf:  {nome:"Transferência",          cls:"t", sent:"S"},
+  deposito:{nome:"Depósito no banco",      cls:"t", sent:"S"},
+  entrada: {nome:"Outra entrada",          cls:"e", sent:"E"},
+  ajuste:  {nome:"Ajuste de saldo",        cls:"t", sent:"E"}
+};
+const TIPOS_FRENTE = {
+  caixa:["receb","boleto","conta","sangria","adiant","salario","despesa","transf","deposito","entrada"],
+  fin:  ["receb","boleto","conta","sangria","adiant","salario","despesa","transf","deposito","entrada"],
+  banco:["entrada","boleto","conta","salario","adiant","despesa","transf"]
+};
+const FORMAS = {din:"Dinheiro", pix:"PIX", deb:"Cartão débito", cred:"Cartão crédito", chq:"Cheque de cliente", cupom:"Cupom de troca", banco:"Banco", boleto:"Boleto", ted:"TED / transferência", cc:"Cartão de crédito (empresa)", chqemp:"Cheque da empresa"};
+const CEDULAS = [
+  ["c200",200,"Cédula R$ 200","#b9b2a4"],["c100",100,"Cédula R$ 100","#7aa3c9"],["c50",50,"Cédula R$ 50","#d6a35f"],
+  ["c20",20,"Cédula R$ 20","#e3cf6a"],["c10",10,"Cédula R$ 10","#c98a7a"],["c5",5,"Cédula R$ 5","#a991c4"],["c2",2,"Cédula R$ 2","#8fb3c4"],
+  ["m100",1,"Moeda R$ 1,00",null],["m050",.5,"Moeda R$ 0,50",null],["m025",.25,"Moeda R$ 0,25",null],["m010",.1,"Moeda R$ 0,10",null],["m005",.05,"Moeda R$ 0,05",null]
+];
+
+// ---------- utilidades ----------
+const $ = s=>document.querySelector(s);
+const h = s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const r2 = n=>Math.round((+n||0)*100)/100;
+const fmt = v=>(r2(v)).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const fmtS = v=>Math.abs(r2(v))<0.005?"–":fmt(v);
+const num = s=>{ if(typeof s==="number") return r2(s); s=String(s||"").replace(/[R$\s]/g,""); if(!s) return 0; if(s.includes(",")) s=s.replace(/\./g,"").replace(",","."); const n=parseFloat(s); return isFinite(n)?r2(n):0; };
+const numStr = v=> (v===undefined||v===null||v==="")?"":String(v).replace(".",",");
+const pad = n=>String(n).padStart(2,"0");
+const iso = d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const hoje = ()=>iso(new Date());
+const br = s=>s?s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4):"";
+const addDias = (s,n)=>{const d=new Date(s+"T12:00:00");d.setDate(d.getDate()+n);return iso(d);};
+const addMeses = (s,i)=>{const d=new Date(s+"T12:00:00");const dia=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+i);const ult=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(dia,ult));return iso(d);};
+const diaSemana = s=>new Date(s+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long"});
+const lsGet = k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const lsSet = (k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const lsDel = k=>{try{localStorage.removeItem(k)}catch(e){}};
+let toastT; function toast(msg,ms){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,ms||3500);}
+function parcelasDe(valor,n,venc1){ const base=Math.floor(valor*100/n)/100; const out=[]; for(let i=0;i<n;i++){ out.push({n:i+1, valor: i===n-1?r2(valor-base*(n-1)):base, venc: venc1?addMeses(venc1,i):""}); } return out; }
+
+// ---------- servidor ----------
+// Endereço da função "api" do Supabase. Troque pelo seu (Edge Functions › api › URL).
+const API_URL = "https://egercwtblyjvbiomukzb.supabase.co/functions/v1/api";
+const temGoogle = /^https?:\/\//.test(API_URL);
+async function call(acao,args){
+  if(!temGoogle) throw new Error("Falta configurar o endereço do servidor (API_URL) no arquivo index.html.");
+  let r;
+  try{
+    const resp=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:S.token,acao,args:args||{}})});
+    r=await resp.json();
+  }catch(e){ throw new Error("Sem conexão com o servidor. Confira a internet e tente de novo."); }
+  if(r&&r.ok) return r.data;
+  const m=(r&&r.erro)||"Erro desconhecido no servidor.";
+  if(m.indexOf("SESSAO")>=0) sair("Sua sessão expirou. Entre de novo.");
+  throw new Error(m.replace(/^SESSAO:\s*/,""));
+}
+
+// ---------- estado ----------
+const S = {
+  token:null, perfil:null, frente:"cx-areias", data:hoje(), tab:"lancar", tipo:"receb",
+  day:{lanc:{},fech:null}, prev:null, dayKey:"", carregandoDia:false,
+  config:{}, contas:[], receber:[], cheques:[], chqTerc:[], ctFiltro:"maos", ctId:null, contasView:"contas", chqFiltro:"acomp", chqId:null, editId:null, editOk:false, editSenha:"", contasFiltro:"abertas", contasLoja:"todas", payingId:null,
+  rcFiltro:"abertos", rcLoja:"todas", recId:null,
+  fech:{}, fechKey:null, saveT:null, fechSujo:false,
+  hist:null, histLoading:false, hf:{de:addDias(hoje(),-6), ate:hoje(), frentes:FRENTES.map(f=>f.id), tipo:"", q:""},
+  lg:{cidade:null, sub:"cx"}
+};
+const isAdmin = ()=>S.perfil==="admin";
+const minhaLoja = ()=>(S.perfil==="admin"||S.perfil==="banco"||!S.perfil)?null:S.perfil.split("-")[1];
+const NOME_LOJA={areias:"Areias",barreiro:"Barreiro",geral:"Geral"};
+function selLoja(id){ const l=minhaLoja(); return l?`<select class="inp" id="${id}" disabled><option value="${l}">${NOME_LOJA[l]}</option></select>`:`<select class="inp" id="${id}"><option value="areias">Areias</option><option value="barreiro">Barreiro</option><option value="geral">Geral</option></select>`; }
+function botoesLoja(attr,atual){ if(minhaLoja()) return ""; const b=(k,n)=>`<button data-${attr}="${k}" aria-pressed="${atual===k}">${n}</button>`; return `<span class="muted" style="margin:0 4px">·</span>${b("todas","Todas as lojas")}${b("areias","Areias")}${b("barreiro","Barreiro")}${b("geral","Geral")}`; }
+
+// ---------- cálculo ----------
+function lancsAtivos(day){ return Object.values((day&&day.lanc)||{}).filter(l=>l&&l.valor!=null&&!l.excluido).sort((a,b)=>(a.hora||"").localeCompare(b.hora||"")||(a.ts||0)-(b.ts||0)); }
+function zeros(){return {din:0,pix:0,deb:0,cred:0,chq:0,cupom:0,banco:0,cc:0};}
+function contagem(ced){ ced=ced||{}; let t=0; for(const [k,val] of CEDULAS) t+=(parseInt(ced[k],10)||0)*val; return r2(t); }
+function sugestaoAbertura(prev){
+  if(!prev) return {din:0,chq:0,de:null};
+  const f=prev.fech||{};
+  if(f.status==="fechado") return {din:contagem(f.ced), chq:num(f.chqGaveta), de:prev.data, fechado:true};
+  const c=calcDia(prev,null); return {din:c.espDin, chq:c.espChq, de:prev.data, fechado:false};
+}
+function calcDia(day, prev){
+  const E=zeros(), Sd=zeros(), R=zeros();
+  for(const l of lancsAtivos(day)){
+    const v=+l.valor||0, f=l.forma||"din";
+    if(l.sentido==="E"){E[f]=(E[f]||0)+v; if(l.tipo==="receb") R[f]=(R[f]||0)+v;} else Sd[f]=(Sd[f]||0)+v;
+  }
+  const fech=(day&&day.fech)||{};
+  const sug=sugestaoAbertura(prev);
+  const abertDin = fech.abertDin!=null&&fech.abertDin!=="" ? num(fech.abertDin) : sug.din;
+  const abertChq = fech.abertChq!=null&&fech.abertChq!=="" ? num(fech.abertChq) : sug.chq;
+  const espDin=r2(abertDin+E.din-Sd.din), espChq=r2(abertChq+E.chq-Sd.chq);
+  const totE=r2(Object.values(E).reduce((a,b)=>a+b,0)), totS=r2(Object.entries(Sd).reduce((a,[k,b])=>(k==="cc"||k==="chqemp")?a:a+b,0));
+  return {E,S:Sd,R,abertDin,abertChq,espDin,espChq,contado:contagem(fech.ced),chqGav:num(fech.chqGaveta),sis:fech.sis||{},maq:fech.maq||{},totE,totS,sug};
+}
+function conferencia(c){
+  const rows=[], add=(item,esp,conf,obs,usar)=>rows.push({item,esp,conf,dif:r2(conf-esp),obs,usar});
+  const tem=v=>v!=null&&v!=="";
+  add("Dinheiro na gaveta (esperado × contado)", c.espDin, c.contado, "abertura + entradas − saídas em dinheiro", true);
+  add("Dinheiro: sistema × lançado", num(c.sis.din), c.R.din, "vendas em dinheiro do sistema × recebimentos lançados", tem(c.sis.din));
+  add("PIX: sistema × lançado", num(c.sis.pix), c.R.pix, "", tem(c.sis.pix));
+  const maqCart=r2(num(c.maq.deb)+num(c.maq.cred));
+  add("Cartão: sistema × maquininha", num(c.sis.cart), maqCart, "débito + crédito da maquininha", tem(c.sis.cart)||maqCart>0);
+  add("Cartão: maquininha × lançado", maqCart, r2(c.R.deb+c.R.cred), "", maqCart>0||(c.R.deb+c.R.cred)>0);
+  add("Cheques (esperado × na gaveta)", c.espChq, c.chqGav, "", c.espChq>0||c.chqGav>0);
+  return rows.filter(r=>r.usar);
+}
+function aplicaSaldo(bal,F,l){
+  if(!l||l.excluido) return; const v=+l.valor||0, s=l.sentido==="E"?1:-1;
+  if(F==="banco"){ if(l.forma!=="cc"&&l.forma!=="chqemp") bal.banco.total+=s*v; return; }
+  if(l.forma==="din") bal[F].din+=s*v;
+  else if(l.forma==="chq") bal[F].chq+=s*v;
+  else if(l.forma==="pix") bal.banco.total+=s*v;
+  else if((l.forma==="deb"||l.forma==="cred")&&s>0) bal.banco.total+=v;
+}
+
+// ---------- login ----------
+function mostrarLogin(msg){
+  $("#app").hidden=true; $("#login").hidden=false; $("#lg-msg").textContent=msg||"";
+  if(!temGoogle){ $("#lg-msg").textContent="Falta configurar o endereço do servidor (API_URL) no arquivo index.html."; return; }
+  $("#f-login").hidden=false; syncLogin();
+}
+function syncLogin(){
+  document.querySelectorAll("[data-lgc]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lgc===S.lg.cidade));
+  document.querySelectorAll("[data-lgs]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lgs===S.lg.sub));
+  $("#lg-sub-box").hidden = !(S.lg.cidade==="areias"||S.lg.cidade==="barreiro");
+}
+function perfilLogin(){ const c=S.lg.cidade; if(!c) return null; if(c==="admin"||c==="banco") return c; return S.lg.sub+"-"+c; }
+async function entrar(perfil,senha){
+  const r=await call("login",{perfil,senha});
+  iniciarSessao(r);
+}
+function iniciarSessao(r){
+  S.token=r.token; S.perfil=r.perfil;
+  lsSet("cdd.sess",JSON.stringify({token:r.token,perfil:r.perfil}));
+  if(!isAdmin()) S.frente=S.perfil; else S.frente=lsGet("cdd.frente")||"cx-areias";
+  if(!FR[S.frente]) S.frente="cx-areias";
+  $("#login").hidden=true; $("#app").hidden=false; const ls=$("#lg-senha"); ls.value=""; ls.type="password"; const vb=document.querySelector(".pwd-btn span"); if(vb) vb.textContent="Mostrar";
+  abrirApp();
+}
+function sair(msg){
+  lsDel("cdd.sess"); S.token=null; S.perfil=null; S.hist=null; S.contas=[]; S.receber=[]; S.contasLoja="todas"; S.rcLoja="todas"; clearInterval(S.poll);
+  mostrarLogin(msg);
+}
+async function abrirApp(){
+  $("#conn").textContent=PERFIS[S.perfil];
+  $("#tab-hist").hidden=!isAdmin();
+  if(S.tab==="hist"&&!isAdmin()) S.tab="lancar";
+  syncHeader(); renderLancForm(); renderDay();
+  try{ S.config=await call("config"); }catch(e){ return; }
+  carregarDia(); carregarContas(); carregarReceber(); carregarCheques(); carregarChequesTerc();
+  clearInterval(S.poll);
+  S.poll=setInterval(()=>{ if(document.visibilityState==="visible"&&S.token&&(S.tab==="lancar"||(S.tab==="fech"&&!S.fechSujo))) carregarDia(true); },30000);
+  renderTab();
+}
+
+// ---------- navegação ----------
+function syncHeader(){
+  const f=FR[S.frente];
+  document.body.dataset.loja=f.loja;
+  document.querySelectorAll("[data-cidade]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.cidade===f.loja?"true":"false"));
+  document.querySelectorAll("[data-sub]").forEach(b=>b.setAttribute("aria-pressed",S.frente.startsWith(b.dataset.sub+"-")?"true":"false"));
+  $("#sel-sub").hidden=f.loja==="banco";
+  $("#sel-frentes").hidden=!isAdmin();
+  $("#frente-fixa").hidden=isAdmin(); $("#frente-fixa").textContent=f.nome;
+  document.querySelectorAll("[data-tab]").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===S.tab?"true":"false"));
+  document.querySelectorAll("[data-view]").forEach(v=>v.hidden=v.dataset.view!==S.tab);
+  $("#dia").value=S.data;
+  const showDia=S.tab==="lancar"||S.tab==="fech";
+  document.querySelector(".diasel").style.visibility=showDia?"visible":"hidden";
+}
+function setFrente(id){ if(!isAdmin()||S.frente===id) return; S.frente=id; lsSet("cdd.frente",id); if(!TIPOS_FRENTE[FR[id].tipo].includes(S.tipo)) S.tipo=TIPOS_FRENTE[FR[id].tipo][0]; onDayChange(); }
+function setData(d){ if(!d||S.data===d) return; S.data=d; onDayChange(); }
+function setTab(t){ S.tab=t; syncHeader(); renderTab(); if(t==="contas"){ carregarContas(); carregarCheques(); carregarChequesTerc(); } if(t==="lancar"||t==="fech") carregarChequesTerc(); if(t==="receber") carregarReceber(); if(t==="lancar"||t==="fech") carregarDia(true); }
+function onDayChange(){ const bx=$("#banco-ajuste"); if(bx) bx.innerHTML=""; S.day={lanc:{},fech:null}; S.prev=null; S.fechKey=null; syncHeader(); renderLancForm(); renderDay(); if(S.tab==="fech") renderFech(); carregarDia(); }
+function renderTab(){ if(S.tab==="lancar"){renderLancForm();renderDay();} else if(S.tab==="fech") renderFech(); else if(S.tab==="contas") renderContas(); else if(S.tab==="receber") renderReceber(); else renderHist(); }
+
+// ---------- carregamento ----------
+function paraDia(lancs,fech,data){ const lanc={}; (lancs||[]).forEach(l=>lanc[l.id]=l); return {lanc,fech:fech||null,data}; }
+async function carregarDia(silencioso){
+  const F=S.frente, D=S.data, key=F+"|"+D;
+  try{
+    const r=await call("dia",{frente:F,data:D});
+    if(F!==S.frente||D!==S.data) return;
+    S.day=paraDia(r.lancs,r.fech,D); S.prev=r.prev?paraDia(r.prev.lancs,r.prev.fech,r.prev.data):null; S.dayKey=key;
+    if(F==="banco") carregarSaldoBanco();
+    if(S.tab==="lancar") renderDay();
+    if(S.tab==="fech") renderFech();
+    showGlobal("");
+  }catch(e){ if(!silencioso) showGlobal(h(e.message),"bad"); }
+}
+async function carregarContas(){ try{ S.contas=await call("contas"); if(S.tab==="contas") renderContas(); if(S.tab==="lancar"&&S.tipo==="conta"&&!($("#l-valor")||{}).value) renderLancForm(); }catch(e){} }
+async function carregarChequesTerc(){ try{ S.chqTerc=await call("chequesTerc"); if(S.tab==="contas"&&S.contasView==="terc") renderContas(); const sel=document.getElementById("l-cssel"); if(sel&&!sel.value) sel.innerHTML=optsChequesMaos(S.frente); const ps=document.getElementById("p-cssel"); if(ps&&!ps.value) syncPayChq(); if(S.tab==="fech") updateFechCalc(); }catch(e){} }
+async function carregarCheques(){ try{ S.cheques=await call("cheques"); if(S.tab==="contas"&&S.contasView==="cheques") renderContas(); }catch(e){} }
+async function carregarReceber(){ try{ S.receber=await call("receber"); if(S.tab==="receber") renderReceber(); }catch(e){} }
+function diaFechado(day){ return !!(day&&day.fech&&day.fech.status==="fechado"); }
+function showGlobal(msg,cls){ $("#global-banner").innerHTML=msg?`<div class="banner ${cls||""}">${msg}</div>`:""; }
+
+// ---------- LANÇAMENTOS ----------
+function formasPara(tipo,F){
+  const comCartao=tipo==="conta"||tipo==="despesa";
+  if(F==="banco"){ if(tipo==="entrada"||tipo==="transf") return ["pix","ted"]; return comCartao?["pix","boleto","ted","chqemp","cc"]:["pix","ted","chqemp"]; }
+  if(tipo==="receb") return ["din","pix","deb","cred","chq","cupom"];
+  if(tipo==="transf"||tipo==="deposito"||tipo==="sangria"||tipo==="entrada") return ["din","chq"];
+  return comCartao?["din","chq","chqemp","cc"]:["din","chq","chqemp"];
+}
+function renderTipos(){
+  const lista=TIPOS_FRENTE[FR[S.frente].tipo];
+  if(!lista.includes(S.tipo)) S.tipo=lista[0];
+  $("#tipos").innerHTML=lista.map(t=>`<button type="button" data-tipo="${t}" aria-pressed="${t===S.tipo}"><span class="dot ${TIPOS[t].cls}"></span>${h(TIPOS[t].nome)}</button>`).join("");
+}
+function optsFrentes(excluir,sel){ return FRENTES.filter(f=>f.id!==excluir).map(f=>`<option value="${f.id}" ${f.id===sel?"selected":""}>${h(f.nome)}</option>`).join(""); }
+function funcsDatalist(){ return `<datalist id="dl-func">${((S.config.geral||{}).funcionarios||[]).map(n=>`<option value="${h(n)}">`).join("")}</datalist>`; }
+function cartoesUsados(){ return [...new Set(S.contas.map(c=>c.cartao).filter(Boolean))].sort(); }
+const selParc = id=>`<select class="inp" id="${id}">${Array.from({length:12},(_,i)=>`<option value="${i+1}">${i+1}x</option>`).join("")}</select>`;
+function renderLancForm(){
+  renderTipos();
+  const F=S.frente, t=S.tipo, formas=formasPara(t,F), ultimo=lsGet("cdd.operador")||"";
+  if(t==="boleto"){
+    $("#f-lanc").innerHTML=`
+      <p class="hint">Registra o boleto emitido para o cliente. Ele fica em Boletos a receber e só entra no Banco quando você confirmar o pagamento.</p>
+      <label class="f"><span class="req">Valor do boleto (R$)</span><input class="inp big" id="l-valor" inputmode="decimal" placeholder="0,00"></label>
+      <label class="f"><span class="req">Cliente</span><input class="inp" id="l-desc"></label>
+      <div class="row2"><label class="f"><span class="req">Vencimento</span><input class="inp" type="date" id="l-venc"></label><label class="f"><span>Parcelas</span>${selParc("l-parc")}</label></div>
+      <label class="f"><span>Nº do boleto / nota</span><input class="inp" id="l-doc"></label>
+      <div class="sub2" id="l-bol-prev"></div>
+      <label class="f"><span>Quem lançou</span><input class="inp" id="l-oper" value="${h(ultimo)}"></label>
+      <div class="btns"><button class="btn loja" type="submit" id="l-salvar">Registrar boleto</button></div>
+      <p class="hint" id="l-msg"></p>`;
+    applyLock(); return;
+  }
+  let extra="";
+  if(t==="receb") extra=`
+    <div class="row2"><label class="f"><span>Origem</span><select class="inp" id="l-origem"><option value="venda">Venda</option><option value="crediario">Crediário</option><option value="outro">Outro</option></select></label>
+    <label class="f"><span>Nº venda ou recibo</span><input class="inp" id="l-doc" inputmode="numeric"></label></div>
+    <label class="f"><span>Cliente / descrição</span><input class="inp" id="l-desc"></label>`;
+  else if(t==="sangria") extra=`
+    <p class="hint">Sangria é sempre saída (despesa). Para passar dinheiro de uma frente para outra, use Transferência.</p>
+    <label class="f"><span class="req">Descrição</span><input class="inp" id="l-desc" placeholder="ex.: compra de material de limpeza"></label>`;
+  else if(t==="conta"){
+    const abertas=S.contas.filter(c=>c.status!=="paga").sort((a,b)=>(a.venc||"").localeCompare(b.venc||""));
+    extra=`<label class="f"><span>Conta a pagar</span><select class="inp" id="l-conta"><option value="">Conta avulsa (não cadastrada)</option>${abertas.map(c=>`<option value="${h(c.id)}">${br(c.venc)} · ${h(c.forn)} · ${fmt(c.valor)}</option>`).join("")}</select></label>
+    <label class="f"><span class="req">Fornecedor / descrição</span><input class="inp" id="l-desc"></label>
+    <label class="f"><span>Nº boleto / nota</span><input class="inp" id="l-doc"></label>`;
+  }
+  else if(t==="adiant"||t==="salario") extra=`
+    <label class="f"><span class="req">Funcionário</span><input class="inp" id="l-func" list="dl-func">${funcsDatalist()}</label>
+    <label class="f"><span>Referência</span><input class="inp" id="l-desc" placeholder="${t==="salario"?"ex.: salário setembro":"ex.: vale semana"}"></label>`;
+  else if(t==="transf") extra=`
+    <label class="f"><span class="req">Destino</span><select class="inp" id="l-dest">${optsFrentes(F,F==="banco"?"fin-areias":"banco")}</select></label>
+    <label class="f"><span>Descrição</span><input class="inp" id="l-desc"></label>`;
+  else if(t==="deposito") extra=`
+    <label class="f"><span>Nº do comprovante</span><input class="inp" id="l-doc"></label>
+    <label class="f"><span>Descrição</span><input class="inp" id="l-desc" placeholder="ex.: depósito envelope"></label>`;
+  else extra=`<label class="f"><span class="req">Descrição</span><input class="inp" id="l-desc"></label>`;
+  $("#f-lanc").innerHTML=`
+    <div class="row2">
+      <label class="f"><span class="req">${t==="receb"?"Valor da venda (R$)":"Valor (R$)"}</span><input class="inp big" id="l-valor" inputmode="decimal" placeholder="0,00"></label>
+      <label class="f"><span>Forma</span><select class="inp" id="l-forma">${formas.map(f=>`<option value="${f}">${h(FORMAS[f])}</option>`).join("")}</select></label>
+    </div>
+    ${t==="receb"?`<div class="row2" id="l-troco-box">
+      <label class="f"><span>Dinheiro recebido (R$)</span><input class="inp big" id="l-receb" inputmode="decimal" placeholder="0,00"></label>
+      <div class="f"><span>Troco</span><span class="num trocov" id="l-troco">–</span></div></div>`:""}
+    ${extra}
+    ${formas.includes("chq")&&TIPOS[t].sent==="E"?`<div class="stack card subcard" id="l-ct-box" hidden>
+      <p class="hint">Dados do cheque recebido. Ele fica registrado em Cheques de clientes até ser repassado ou depositado.</p>
+      <div class="row2"><label class="f"><span class="req">De quem é (emitente)</span><input class="inp" id="l-ctemit"></label><label class="f"><span class="req">Bom para</span><input class="inp" type="date" id="l-ctbom" value="${S.data}"></label></div>
+      <div class="row2"><label class="f"><span>Nº do cheque</span><input class="inp" id="l-ctnum" inputmode="numeric"></label><label class="f"><span>Banco</span><input class="inp" id="l-ctbanco" placeholder="ex.: Bradesco"></label></div></div>`:""}
+    ${formas.includes("chq")&&TIPOS[t].sent!=="E"?`<div class="stack card subcard" id="l-cs-box" hidden>
+      <label class="f"><span class="req">Qual cheque</span><select class="inp" id="l-cssel">${optsChequesMaos(F)}</select></label>
+      ${t!=="transf"&&t!=="deposito"?`<label class="f"><span>Repassado para</span><input class="inp" id="l-cspara" placeholder="se em branco, usa a descrição"></label>`:""}
+      <p class="hint">O valor do lançamento é o valor do cheque.</p></div>`:""}
+    ${formas.includes("chqemp")?`<div class="stack card subcard" id="l-chq-box" hidden>
+      <p class="hint">O cheque da empresa não sai do banco agora. Ele fica em Cheques a compensar até quem tem acesso ao Banco confirmar a compensação.</p>
+      <div class="row2"><label class="f"><span class="req">Nº do cheque</span><input class="inp" id="l-chnum" inputmode="numeric"></label><label class="f"><span class="req">Bom para</span><input class="inp" type="date" id="l-chbom" value="${S.data}"></label></div>
+      <label class="f"><span>Nominal a</span><input class="inp" id="l-chnom" placeholder="se em branco, usa a descrição"></label></div>`:""}
+    ${formas.includes("cc")?`<div class="stack card subcard" id="l-cc-box" hidden>
+      <p class="hint">A compra no cartão não sai do caixa agora. As parcelas viram contas a pagar com o vencimento do cartão.</p>
+      <label class="f"><span class="req">Cartão</span><input class="inp" id="l-cartao" list="dl-cartoes" placeholder="ex.: Itaú final 1234"><datalist id="dl-cartoes">${cartoesUsados().map(n=>`<option value="${h(n)}">`).join("")}</datalist></label>
+      <div class="row2"><label class="f"><span class="req">Vencimento da 1ª parcela</span><input class="inp" type="date" id="l-ccvenc"></label><label class="f"><span>Parcelas</span>${selParc("l-parc")}</label></div>
+      <div class="sub2" id="l-cc-prev"></div></div>`:""}
+    ${F!=="banco"&&["conta","adiant","salario","despesa"].includes(t)?`<p class="hint">Pagamento por PIX, boleto ou TED é lançado no Banco.</p>`:""}
+    <label class="f"><span>Quem lançou</span><input class="inp" id="l-oper" value="${h(ultimo)}"></label>
+    <label class="f"><span>Observação / quem autorizou</span><input class="inp" id="l-obs"></label>
+    <div class="btns"><button class="btn loja" type="submit" id="l-salvar">Salvar ${h(TIPOS[t].nome.toLowerCase())}</button></div>
+    <p class="hint" id="l-msg"></p>
+    <p class="hint">A hora é registrada automaticamente ao salvar.</p>`;
+  updateTroco(); updateCC(); updateChq(); applyLock();
+}
+function updateTroco(){
+  const box=document.getElementById("l-troco-box"); if(!box) return;
+  const din=(document.getElementById("l-forma")||{}).value==="din"; box.hidden=!din;
+  const out=document.getElementById("l-troco"); if(!din||!out) return;
+  const v=num($("#l-valor").value), r=num($("#l-receb").value);
+  if(!r){ out.textContent="–"; out.style.color=""; return; }
+  const t=r2(r-v); out.textContent=t<0?"faltam "+fmt(-t):fmt(t); out.style.color=t<0?"var(--out)":"";
+}
+function vencCartaoSugerido(cartao){
+  let mapa={}; try{mapa=JSON.parse(lsGet("cdd.cartoes")||"{}")}catch(e){}
+  const dia=mapa[cartao]; if(!dia) return "";
+  const t=hoje(); const d=new Date(t+"T12:00:00"); d.setDate(1);
+  for(let i=0;i<3;i++){ const ult=new Date(d.getFullYear(),d.getMonth()+1,0).getDate(); const c=new Date(d.getFullYear(),d.getMonth(),Math.min(dia,ult),12); if(iso(c)>t) return iso(c); d.setMonth(d.getMonth()+1); }
+  return "";
+}
+function updateCC(){
+  const box=document.getElementById("l-cc-box"); if(!box) return;
+  const cc=(document.getElementById("l-forma")||{}).value==="cc"; box.hidden=!cc; if(!cc) return;
+  const v=num($("#l-valor").value), n=parseInt($("#l-parc").value,10)||1, venc=$("#l-ccvenc").value, ps=parcelasDe(v,n,venc);
+  $("#l-cc-prev").innerHTML=v>0?`${n}x de <b class="num">${fmt(ps[0].valor)}</b>${venc?" · vence "+ps.map(p=>br(p.venc).slice(0,5)).join(", "):" · informe o vencimento"}`:"";
+}
+function updateChq(){
+  const f=(document.getElementById("l-forma")||{}).value;
+  const box=document.getElementById("l-chq-box"); if(box) box.hidden=f!=="chqemp";
+  const ct=document.getElementById("l-ct-box"); if(ct) ct.hidden=f!=="chq";
+  const cs=document.getElementById("l-cs-box"), v=document.getElementById("l-valor");
+  if(cs){ cs.hidden=f!=="chq"; if(v){ v.readOnly=f==="chq"; if(f==="chq") aplicaChequeSel(); } } else if(v) v.readOnly=false;
+}
+function chequesMaos(F){ return S.chqTerc.filter(q=>q.status==="em_maos"&&q.frente===F).sort((a,b)=>(a.bomPara||"").localeCompare(b.bomPara||"")); }
+function optsChequesMaos(F){ const l=chequesMaos(F); return l.length?`<option value="">Escolha o cheque…</option>`+l.map(q=>`<option value="${h(q.id)}">${br(q.bomPara).slice(0,5)} · ${h(q.emitente)}${q.numero?" · nº "+h(q.numero):""} · ${fmt(q.valor)}</option>`).join(""):`<option value="">Nenhum cheque de cliente em mãos aqui</option>`; }
+function aplicaChequeSel(){ const s=document.getElementById("l-cssel"), v=document.getElementById("l-valor"); if(!s||!v) return; const q=S.chqTerc.find(x=>x.id===s.value); v.value=q?numStr(q.valor):""; updateCC(); }
+function updateBolPrev(){
+  const el=document.getElementById("l-bol-prev"); if(!el) return;
+  const v=num($("#l-valor").value), n=parseInt($("#l-parc").value,10)||1, venc=$("#l-venc").value;
+  el.innerHTML=v>0&&n>1?`${n}x de <b class="num">${fmt(parcelasDe(v,n,venc)[0].valor)}</b>${venc?" · vence "+parcelasDe(v,n,venc).map(p=>br(p.venc).slice(0,5)).join(", "):""}`:"";
+}
+function applyLock(){
+  const fechado=diaFechado(S.day)&&S.tipo!=="boleto";
+  document.querySelectorAll("#f-lanc input,#f-lanc select,#f-lanc button").forEach(el=>el.disabled=fechado);
+}
+async function salvarLanc(ev){
+  ev.preventDefault();
+  const F=S.frente, D=S.data, t=S.tipo, g=id=>{const el=document.getElementById(id);return el?el.value.trim():"";};
+  const msg=$("#l-msg"), valor=num(g("l-valor"));
+  if(valor<=0){ msg.textContent="Digite um valor maior que zero."; $("#l-valor").focus(); return; }
+  const desc=g("l-desc"), forma=g("l-forma")||"din", oper=g("l-oper");
+  if(t==="boleto"&&(!desc||!g("l-venc"))){ msg.textContent="Preencha cliente e vencimento."; return; }
+  if((t==="conta"&&!desc&&!g("l-conta"))||(["despesa","entrada","sangria"].includes(t)&&!desc)){ msg.textContent="Preencha a descrição."; return; }
+  if((t==="adiant"||t==="salario")&&!g("l-func")){ msg.textContent="Informe o funcionário."; return; }
+  const p={frente:F,data:D,tipo:t,forma,valor,desc,doc:g("l-doc"),obs:g("l-obs"),oper,func:g("l-func"),origem:g("l-origem"),dest:g("l-dest"),contaId:g("l-conta")};
+  if(t==="boleto") p.boleto={venc:g("l-venc"),n:parseInt(g("l-parc"),10)||1};
+  if(t==="receb"&&forma==="din"&&g("l-receb")){ const rec=num(g("l-receb")); if(rec<valor){ msg.textContent="O dinheiro recebido é menor que o valor da venda."; return; } p.recebido=rec; }
+  if(forma==="cc"){
+    const cartao=g("l-cartao"), venc1=g("l-ccvenc");
+    if(!cartao||!venc1){ msg.textContent="Informe o cartão e o vencimento da 1ª parcela."; return; }
+    let mapa={}; try{mapa=JSON.parse(lsGet("cdd.cartoes")||"{}")}catch(e){} mapa[cartao]=parseInt(venc1.slice(8,10),10); lsSet("cdd.cartoes",JSON.stringify(mapa));
+    p.cc={cartao,venc1,n:parseInt(g("l-parc"),10)||1};
+  }
+  if(forma==="chq"&&TIPOS[t].sent==="E"){
+    if(!g("l-ctemit")||!g("l-ctbom")){ msg.textContent="Informe de quem é o cheque e o bom para."; return; }
+    p.chqTerc={emitente:g("l-ctemit"),bomPara:g("l-ctbom"),numero:g("l-ctnum"),banco:g("l-ctbanco")};
+  }
+  if(forma==="chq"&&TIPOS[t].sent!=="E"){
+    if(!g("l-cssel")){ msg.textContent="Escolha qual cheque de cliente está sendo usado."; return; }
+    p.chqTercId=g("l-cssel"); p.repassadoPara=g("l-cspara");
+  }
+  if(forma==="chqemp"){
+    if(!g("l-chnum")||!g("l-chbom")){ msg.textContent="Informe o número do cheque e o bom para."; return; }
+    p.cheque={numero:g("l-chnum"),bomPara:g("l-chbom"),nominal:g("l-chnom")};
+  }
+  if(oper) lsSet("cdd.operador",oper);
+  const btn=$("#l-salvar"); btn.disabled=true; msg.textContent="Salvando…";
+  try{
+    const r=await call("salvarLanc",p);
+    toast(r.msg||"Salvo.");
+    renderLancForm(); const v=$("#l-valor"); if(v) v.focus();
+    carregarDia(true);
+    if(t==="conta"||forma==="cc") carregarContas();
+    if(forma==="chqemp") carregarCheques();
+    if(forma==="chq") carregarChequesTerc();
+    if(t==="boleto") carregarReceber();
+  }catch(e){ msg.textContent=e.message; btn.disabled=false; }
+}
+function renderBancoCard(){
+  const box=$("#banco-ajuste"); if(!box) return;
+  if(S.frente!=="banco"||!(isAdmin()||S.perfil==="banco")){ box.innerHTML=""; return; }
+  if($("#aj-real")) { atualizaDifAjuste(); return; }
+  box.innerHTML=`<div class="card" style="margin-bottom:14px"><h3>Conferir saldo do banco</h3>
+    <div class="row3">
+      <div class="f"><span>Saldo no site</span><span class="num trocov" id="aj-calc">${S.saldoBanco==null?"…":fmt(S.saldoBanco)}</span></div>
+      <label class="f"><span>Saldo no extrato</span><input class="inp num" id="aj-real" inputmode="decimal" placeholder="0,00"></label>
+      <div class="f"><span>Diferença</span><span class="num trocov" id="aj-dif">–</span></div>
+    </div>
+    <p class="hint" id="aj-prev" style="margin-top:6px"></p>
+    <label class="f" style="margin-top:10px"><span class="req">Justificativa</span><input class="inp" id="aj-just" placeholder="ex.: taxa do banco, rendimento"></label>
+    <div class="btns" style="margin-top:10px"><button class="btn loja" data-act="ajustar">Atualizar saldo</button><span class="hint" id="aj-msg">A diferença entra como ajuste no dia ${br(S.data)}.</span></div></div>`;
+}
+function atualizaDifAjuste(){
+  const c=$("#aj-calc"), d=$("#aj-dif"); if(!c||!d) return;
+  c.textContent=S.saldoBanco==null?"…":fmt(S.saldoBanco);
+  const pv=$("#aj-prev"); if(pv) pv.innerHTML=S.saldoBanco==null?"":`Cheques a compensar <b class="num">− ${fmt(S.aCompensar||0)}</b> · saldo previsto <b class="num">${fmt(S.saldoBanco-(S.aCompensar||0))}</b>`;
+  const v=($("#aj-real").value||"").trim(); if(!v||S.saldoBanco==null){ d.textContent="–"; d.style.color=""; return; }
+  const dif=r2(num(v)-S.saldoBanco); d.textContent=Math.abs(dif)<0.005?"confere":(dif>0?"+":"")+fmt(dif); d.style.color=Math.abs(dif)<0.005?"var(--in)":"var(--out)";
+}
+async function carregarSaldoBanco(){
+  if(S.frente!=="banco"||!(isAdmin()||S.perfil==="banco")) return;
+  try{ const r=await call("saldoBanco"); S.saldoBanco=r.saldo; S.aCompensar=r.aCompensar||0; renderBancoCard(); atualizaDifAjuste(); }catch(e){}
+}
+async function ajustarSaldo(btn){
+  const m=$("#aj-msg"), real=($("#aj-real").value||"").trim(), just=($("#aj-just").value||"").trim();
+  if(!real){ m.textContent="Digite o saldo que aparece no extrato."; return; }
+  if(!just){ m.textContent="Escreva a justificativa da diferença."; return; }
+  btn.disabled=true; m.textContent="Atualizando…";
+  try{ const r=await call("ajusteBanco",{saldoReal:num(real),justificativa:just,data:S.data,oper:lsGet("cdd.operador")||""});
+    toast(r.msg); $("#aj-real").value=""; $("#aj-just").value=""; m.textContent=r.msg; await carregarDia(true); }
+  catch(e){ m.textContent=e.message; }
+  btn.disabled=false;
+}
+function renderDay(){
+  const F=S.frente, f=FR[F], day=S.day;
+  renderBancoCard();
+  $("#lanc-title").textContent=f.nome;
+  $("#lanc-sub").textContent=br(S.data)+" · "+diaSemana(S.data);
+  const c=calcDia(day,S.prev), ls=lancsAtivos(day), exc=Object.values(day.lanc||{}).filter(l=>l&&l.excluido);
+  $("#lanc-banner").innerHTML=diaFechado(day)?`<div class="banner ok">Dia fechado${day.fech.fechadoPor?" por "+h(day.fech.fechadoPor):""}${day.fech.fechadoEmTexto?" em "+h(day.fech.fechadoEmTexto):""}. ${isAdmin()?"Para lançar, reabra na aba Fechamento.":"Para lançar, peça ao administrador para reabrir."}</div>`:"";
+  const t3=F==="banco"
+    ?`<div class="tile banco"><div class="k">Movimento líquido</div><div class="v num">${fmt(c.totE-c.totS)}</div><div class="d">entradas − saídas no banco</div></div>`
+    :`<div class="tile ${f.loja}"><div class="k">Dinheiro esperado na gaveta</div><div class="v num">${fmt(c.espDin)}</div><div class="d">abertura ${fmt(c.abertDin)} + ${fmt(c.E.din)} − ${fmt(c.S.din)}</div></div>`;
+  $("#dia-tiles").innerHTML=`
+    <div class="tile e"><div class="k">Entradas</div><div class="v num">${fmt(c.totE)}</div><div class="d">${ls.filter(l=>l.sentido==="E").length} lançamento(s)</div></div>
+    <div class="tile s"><div class="k">Saídas</div><div class="v num">${fmt(c.totS)}</div><div class="d">${ls.filter(l=>l.sentido==="S").length} lançamento(s)</div></div>${t3}`;
+  const fs=Object.keys(FORMAS).filter(k=>c.E[k]||c.S[k]);
+  $("#dia-formas").innerHTML=fs.map(k=>`<span class="chip">${h(FORMAS[k])} ${c.E[k]?`<b class="dif-ok">+${fmt(c.E[k])}</b>`:""}${c.S[k]?`<b class="dif-bad">−${fmt(c.S[k])}</b>`:""}</span>`).join("");
+  if(!ls.length&&!exc.length){ $("#lanc-tabela").innerHTML=`<div class="empty">${S.dayKey===F+"|"+S.data?"Nenhum lançamento neste dia ainda. Escolha o tipo ao lado, digite o valor e salve.":"Carregando…"}</div>`; applyLock(); return; }
+  const fechado=diaFechado(day);
+  const rows=ls.concat(exc).map(l=>{
+    const tp=TIPOS[l.tipo]||{nome:l.tipo,cls:""};
+    const nomeTipo=(l.tipo==="transf"||l.tipo==="deposito")&&l.sentido==="E"?tp.nome+" recebida":tp.nome;
+    const det=[l.origem==="crediario"?"Crediário":l.origem==="boleto"?"Boleto recebido":"", l.recebido?"recebeu "+fmt(l.recebido)+" · troco "+fmt(l.troco):"", l.cartao?l.cartao+" · "+l.parcelasN+"x":"", l.chequeNum?"cheque nº "+l.chequeNum+(l.bomPara?" · bom para "+br(l.bomPara).slice(0,5):""):"", l.chqTercEmit?"cheque de "+l.chqTercEmit+(l.chqTercNum?" nº "+l.chqTercNum:"")+(l.bomPara&&l.sentido==="E"?" · bom para "+br(l.bomPara).slice(0,5):""):"", l.repassadoPara?"repassado para "+l.repassadoPara:"", l.func, l.doc?"nº "+l.doc:"", l.obs, l.oper?"por "+l.oper:""].filter(Boolean).join(" · ");
+    return `<tr class="${l.excluido?"excl":""}"><td class="num">${h(l.hora||"")}</td>
+      <td><span class="pill ${l.sentido==="E"?"e":(tp.cls==="t"?"t":"s")}">${h(nomeTipo)}</span></td>
+      <td style="min-width:180px">${h(l.desc||"")}${det?`<div class="sub2">${h(det)}</div>`:""}${l.excluido?`<div class="sub2">excluído</div>`:""}</td>
+      <td>${h(FORMAS[l.forma]||l.forma)}</td>
+      <td class="r num e">${l.sentido==="E"?fmt(l.valor):""}</td><td class="r num s">${l.sentido==="S"?fmt(l.valor):""}</td>
+      <td class="r">${!l.excluido&&!fechado?`<button class="linkbtn" data-act="del" data-id="${h(l.id)}">Excluir</button>`:""}</td></tr>`;
+  }).join("");
+  $("#lanc-tabela").innerHTML=`<table><thead><tr><th>Hora</th><th>Tipo</th><th>Descrição</th><th>Forma</th><th class="r">Entrada</th><th class="r">Saída</th><th></th></tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="4">Total do dia</td><td class="r num e">${fmt(c.totE)}</td><td class="r num s">${fmt(c.totS)}</td><td></td></tr></tfoot></table>`;
+  applyLock();
+}
+
+// ---------- FECHAMENTO ----------
+function renderFech(force){
+  const v=$("#v-fech"), F=S.frente, f=FR[F], day=S.day;
+  if(F==="banco"){ v.innerHTML=`<div class="titlebar"><h2>Banco</h2><span class="sub">${br(S.data)}</span></div><div class="banner">O banco não tem gaveta para contar. Depósitos, PIX, cartões e boletos aparecem nos Lançamentos e o saldo do banco fica no Histórico.</div>`; return; }
+  if(S.dayKey!==F+"|"+S.data){ v.innerHTML=`<div class="titlebar"><h2>Fechamento · ${h(f.nome)}</h2><span class="sub">${br(S.data)}</span></div><div class="empty">Carregando…</div>`; S.fechKey=null; return; }
+  const key=F+"|"+S.data+"|"+((day.fech||{}).status||"-")+"|"+(S.prev?S.prev.data:"");
+  const fechado=diaFechado(day);
+  if(S.fechKey!==key||force){
+    S.fechKey=key; S.fechSujo=false;
+    S.fech=JSON.parse(JSON.stringify(day.fech||{}));
+    const fe=S.fech, sis=fe.sis||{}, maq=fe.maq||{}, ced=fe.ced||{};
+    const dis=fechado?"disabled":"";
+    const c=calcDia(day,S.prev);
+    const inp=(id,val,ph)=>`<input class="inp num" id="${id}" inputmode="decimal" value="${h(numStr(val))}" placeholder="${h(ph||"0,00")}" ${dis}>`;
+    v.innerHTML=`
+      <div class="titlebar"><h2>Fechamento · ${h(f.nome)}</h2><span class="sub">${br(S.data)} · ${diaSemana(S.data)}</span></div>
+      <div id="fech-banner"></div>
+      <div class="fech-grid">
+        <div class="stack">
+          <div class="card"><h3><span class="sec-n">1</span>Abertura</h3>
+            <div class="row2">
+              <label class="f"><span>Dinheiro no início do dia</span>${inp("fx-abertDin",fe.abertDin,numStr(c.sug.din.toFixed(2)))}</label>
+              <label class="f"><span>Cheques no início do dia</span>${inp("fx-abertChq",fe.abertChq,numStr(c.sug.chq.toFixed(2)))}</label>
+            </div>
+            <p class="hint" style="margin-top:8px">${c.sug.de?`Em branco usa o ${c.sug.fechado?"valor contado no fechamento":"saldo calculado"} de ${br(c.sug.de)}.`:"Primeiro dia desta frente: informe o troco inicial."}</p>
+          </div>
+          <div class="card"><h3><span class="sec-n">2</span>Vendas do sistema (relatório do dia)</h3>
+            <div class="row2">
+              <label class="f"><span>Dinheiro</span>${inp("fx-sis-din",sis.din)}</label><label class="f"><span>PIX</span>${inp("fx-sis-pix",sis.pix)}</label>
+              <label class="f"><span>Cartão</span>${inp("fx-sis-cart",sis.cart)}</label><label class="f"><span>Cheque</span>${inp("fx-sis-chq",sis.chq)}</label>
+            </div></div>
+          <div class="card"><h3><span class="sec-n">3</span>Relatório da maquininha</h3>
+            <div class="row3"><label class="f"><span>Débito</span>${inp("fx-maq-deb",maq.deb)}</label><label class="f"><span>Crédito</span>${inp("fx-maq-cred",maq.cred)}</label><label class="f"><span>PIX</span>${inp("fx-maq-pix",maq.pix)}</label></div></div>
+        </div>
+        <div class="stack">
+          <div class="card"><h3><span class="sec-n">4</span>Contagem da gaveta</h3>
+            <div class="ced">
+              <span class="sub2">Cédula / moeda</span><span class="sub2" style="text-align:right">Qtd.</span><span class="sub2" style="text-align:right">Total</span>
+              ${CEDULAS.map(([k,val,nome,cor])=>`<span class="lbl">${cor?`<span class="nota" style="background:${cor}"></span>`:`<span class="moeda" style="background:${val>=.5?"#cdb27a":"#b9b9b4"}"></span>`}${h(nome)}</span>
+                <input class="inp" id="fx-ced-${k}" inputmode="numeric" value="${h(ced[k]||"")}" placeholder="0" ${dis}><span class="tot" id="fx-tot-${k}">${fmtS((parseInt(ced[k],10)||0)*val)}</span>`).join("")}
+              <strong>Total contado</strong><span></span><strong class="tot" id="fx-contado">${fmt(contagem(ced))}</strong>
+            </div>
+            <label class="f" style="margin-top:12px"><span>Cheques na gaveta (soma de todos)</span>${inp("fx-chqGaveta",fe.chqGaveta)}</label>
+            <p class="hint" id="fx-chqmaos" style="margin-top:6px"></p>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:18px"><h3><span class="sec-n">5</span>Conferência</h3><div class="tablewrap" style="border:0" id="fx-conf"></div></div>
+      <div class="card" style="margin-top:18px"><h3><span class="sec-n">6</span>Encerrar o dia</h3>
+        <div class="stack">
+          <label class="f"><span>Observações (explique diferenças)</span><textarea class="inp" id="fx-obs" rows="3" ${dis}>${h(fe.obs||"")}</textarea></label>
+          <div class="row2"><label class="f"><span class="req">Fechado por</span><input class="inp" id="fx-por" value="${h(fe.fechadoPor||lsGet("cdd.operador")||"")}" ${dis}></label><span></span></div>
+          <p class="hint">Lance sangrias, depósitos e transferências antes de fechar. O que ficar na gaveta vira a abertura do próximo dia.</p>
+          <div class="btns" id="fx-acoes"></div>
+          <p class="hint" id="fx-msg"></p>
+        </div>
+      </div>`;
+  }
+  updateFechCalc();
+}
+function readFechInputs(){
+  const g=id=>{const el=document.getElementById(id);return el?el.value.trim():undefined;};
+  const fe=S.fech; fe.sis=fe.sis||{}; fe.maq=fe.maq||{}; fe.ced=fe.ced||{};
+  fe.abertDin=g("fx-abertDin"); fe.abertChq=g("fx-abertChq");
+  ["din","pix","cart","chq"].forEach(k=>fe.sis[k]=g("fx-sis-"+k));
+  ["deb","cred","pix"].forEach(k=>fe.maq[k]=g("fx-maq-"+k));
+  CEDULAS.forEach(([k])=>fe.ced[k]=g("fx-ced-"+k));
+  fe.chqGaveta=g("fx-chqGaveta"); fe.obs=g("fx-obs"); fe.fechadoPor=g("fx-por");
+}
+function fechParaCalc(){ const d={lanc:S.day.lanc, data:S.data, fech:Object.assign({},S.day.fech||{},S.fech)}; if(d.fech.abertDin==="") d.fech.abertDin=null; if(d.fech.abertChq==="") d.fech.abertChq=null; return d; }
+function updateFechCalc(){
+  if(S.frente==="banco"||!$("#fx-conf")) return;
+  const day=fechParaCalc(), c=calcDia(day,S.prev), rows=conferencia(c), fechado=diaFechado(S.day);
+  CEDULAS.forEach(([k,val])=>{const el=document.getElementById("fx-tot-"+k); if(el) el.textContent=fmtS((parseInt(S.fech.ced&&S.fech.ced[k],10)||0)*val);});
+  const ct=$("#fx-contado"); if(ct) ct.textContent=fmt(c.contado);
+  const cm=$("#fx-chqmaos"); if(cm){ const l=chequesMaos(S.frente); cm.innerHTML=l.length?`Registrados em mãos aqui: ${l.length} cheque(s), <b class="num">${fmt(l.reduce((a,q)=>a+(+q.valor||0),0))}</b> — ${l.map(q=>h(q.emitente)+" "+fmt(q.valor)).join(", ")}`:"Nenhum cheque de cliente registrado em mãos nesta frente."; }
+  $("#fx-conf").innerHTML=`<table class="conf"><thead><tr><th>Item</th><th class="r">Esperado</th><th class="r">Conferido</th><th class="r">Diferença</th><th>Situação</th></tr></thead><tbody>${
+    rows.map(r=>{const ok=Math.abs(r.dif)<0.005; return `<tr><td>${h(r.item)}${r.obs?`<div class="sub2">${h(r.obs)}</div>`:""}</td><td class="r num">${fmt(r.esp)}</td><td class="r num">${fmt(r.conf)}</td><td class="r num ${ok?"":"dif-bad"}">${ok?"–":(r.dif>0?"+":"")+fmt(r.dif)}</td><td><span class="pill ${ok?"e":(r.dif<0?"s":"w")}">${ok?"OK":(r.dif<0?"Falta":"Sobra")}</span></td></tr>`;}).join("")}</tbody></table>`;
+  const fe=S.day.fech||{};
+  const b=$("#fech-banner"); if(b) b.innerHTML=fechado?`<div class="banner ok">Caixa fechado${fe.fechadoPor?" por "+h(fe.fechadoPor):""}${fe.fechadoEmTexto?" em "+h(fe.fechadoEmTexto):""}. ${fe.pdf&&(fe.pdf.path||fe.pdf.url)?`PDF salvo: <button class="linkbtn" style="color:inherit;text-decoration:underline" data-act="abrir-pdf" data-f="${h(S.frente)}" data-d="${h(S.data)}">${h(fe.pdf.nome||"abrir")}</button>.`:"O PDF ainda não foi salvo."}</div>`:"";
+  const ac=$("#fx-acoes");
+  if(ac) ac.innerHTML=fechado
+    ?`${fe.pdf&&(fe.pdf.path||fe.pdf.url)?`<button class="btn" data-act="abrir-pdf" data-f="${h(S.frente)}" data-d="${h(S.data)}">Abrir PDF</button>`:""}<button class="btn pri" data-act="pdf-drive">${fe.pdf&&(fe.pdf.path||fe.pdf.url)?"Gerar PDF de novo":"Salvar PDF"}</button>${isAdmin()?`<button class="btn danger" data-act="reabrir">Reabrir dia</button>`:""}`
+    :`<button class="btn loja" data-act="fechar">Fechar caixa e salvar PDF</button>`;
+}
+function agendaRascunho(){
+  S.fechSujo=true; clearTimeout(S.saveT);
+  S.saveT=setTimeout(async()=>{
+    if(diaFechado(S.day)) return;
+    const fe=S.fech;
+    try{ await call("rascunhoFech",{frente:S.frente,data:S.data,fech:{abertDin:fe.abertDin,abertChq:fe.abertChq,sis:fe.sis,maq:fe.maq,ced:fe.ced,chqGaveta:fe.chqGaveta,obs:fe.obs,fechadoPor:fe.fechadoPor}});
+      S.day.fech=Object.assign({},S.day.fech||{},fe,{status:"aberto"}); S.fechSujo=false; }
+    catch(e){ const m=$("#fx-msg"); if(m) m.textContent="Rascunho não salvo: "+e.message; }
+  },1500);
+}
+async function fecharCaixa(btn){
+  readFechInputs(); const m=$("#fx-msg");
+  if(!S.fech.fechadoPor){ m.textContent="Preencha quem está fechando."; $("#fx-por").focus(); return; }
+  if(contagem(S.fech.ced)===0&&!S.confirmZero){ m.textContent="A contagem da gaveta está zerada. Clique de novo em Fechar para confirmar mesmo assim."; S.confirmZero=true; return; }
+  S.confirmZero=false; lsSet("cdd.operador",S.fech.fechadoPor); clearTimeout(S.saveT);
+  const d=fechParaCalc(), c=calcDia(d,S.prev), rows=conferencia(c), fe=S.fech;
+  const registro={abertDin:c.abertDin,abertChq:c.abertChq,sis:fe.sis,maq:fe.maq,ced:fe.ced,chqGaveta:fe.chqGaveta,obs:fe.obs,fechadoPor:fe.fechadoPor,
+    resumo:{entradas:c.totE,saidas:c.totS,espDin:c.espDin,contado:c.contado,difDin:r2(c.contado-c.espDin),espChq:c.espChq,chqGav:c.chqGav,ok:rows.every(r=>Math.abs(r.dif)<0.005)}};
+  const agora=new Date(); const txt=pad(agora.getDate())+"/"+pad(agora.getMonth()+1)+"/"+agora.getFullYear()+" "+pad(agora.getHours())+":"+pad(agora.getMinutes());
+  const pdf=pdfHtml({lanc:S.day.lanc,data:S.data,fech:Object.assign({},registro,{status:"fechado",fechadoEmTexto:txt})},S.frente);
+  btn.disabled=true; m.textContent="Gerando o PDF…";
+  let b64=null, erroPdf="";
+  try{ b64=await htmlParaPdf(pdf.html); }catch(e){ erroPdf=e.message; }
+  m.textContent="Fechando o caixa…";
+  try{
+    const r=await call("fechar",{frente:S.frente,data:S.data,fech:registro,pdf:b64,nome:pdf.nome});
+    const aviso=r.erro||(erroPdf?"O caixa foi fechado, mas o PDF não foi gerado: "+erroPdf:"");
+    m.textContent=aviso||"Caixa fechado e PDF salvo."; toast(aviso?"Caixa fechado.":"Caixa fechado e PDF salvo.");
+    await carregarDia(true);
+  }catch(e){ m.textContent=e.message; btn.disabled=false; }
+}
+async function pdfDeNovo(btn){
+  const m=$("#fx-msg"); btn.disabled=true; m.textContent="Gerando o PDF…";
+  try{ const pdf=pdfHtml(S.day,S.frente); const b64=await htmlParaPdf(pdf.html); await call("pdf",{frente:S.frente,data:S.data,pdf:b64,nome:pdf.nome}); m.textContent="PDF salvo."; await carregarDia(true); }
+  catch(e){ m.textContent=e.message; btn.disabled=false; }
+}
+async function reabrir(){
+  const m=$("#fx-msg");
+  if(!S.confirmReabrir){ S.confirmReabrir=true; m.textContent="Clique de novo em Reabrir para confirmar. O fechamento volta a ser rascunho."; setTimeout(()=>S.confirmReabrir=false,6000); return; }
+  S.confirmReabrir=false;
+  try{ await call("reabrir",{frente:S.frente,data:S.data}); m.textContent="Dia reaberto."; await carregarDia(true); }catch(e){ m.textContent=e.message; }
+}
+
+// ---------- PDF (gerado no navegador e guardado no Supabase) ----------
+async function htmlParaPdf(html){
+  if(!window.html2pdf) throw new Error("o gerador de PDF não carregou. Recarregue a página.");
+  const box=document.createElement("div"); box.innerHTML=html; box.style.cssText="width:186mm;background:#ffffff;color:#111111";
+  const uri=await window.html2pdf().set({margin:[10,12,12,12],html2canvas:{scale:2,backgroundColor:"#ffffff"},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},pagebreak:{mode:["css","legacy"],avoid:"tr"}}).from(box).outputPdf("datauristring");
+  return String(uri).split(",")[1];
+}
+function pdfHtml(day,F){
+  const f=FR[F], c=calcDia(day,S.prev), fe=day.fech||{}, cor={areias:"#a97a26",barreiro:"#9a4b32",banco:"#21545c"}[f.loja];
+  const tab=(titulo,head,rows,dir)=>`<h2>${h(titulo)}</h2><table><tr>${head.map((x,i)=>`<th${dir&&dir.includes(i)?' class="r"':""}>${h(x)}</th>`).join("")}</tr>${rows.map(r=>`<tr>${r.map((x,i)=>`<td${dir&&dir.includes(i)?' class="r"':""}>${h(x)}</td>`).join("")}</tr>`).join("")}</table>`;
+  const conf=conferencia(c), fs=Object.keys(FORMAS).filter(k=>c.E[k]||c.S[k]), sis=fe.sis||{}, maq=fe.maq||{}, ced=fe.ced||{};
+  const html=`<style>
+    .pdfdoc{font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#111;background:#fff;line-height:1.35}
+    .pdfdoc .bar{height:6px;background:${cor};margin-bottom:8px}
+    .pdfdoc h1{font-size:16pt;margin:0 0 2px;color:#111} .pdfdoc .sub{color:#555;margin:0 0 6px}
+    .pdfdoc h2{font-size:11pt;margin:14px 0 4px;color:${cor}}
+    .pdfdoc table{border-collapse:collapse;width:100%} .pdfdoc th,.pdfdoc td{border:1px solid #bbb;padding:3px 6px;vertical-align:top;color:#111}
+    .pdfdoc th{background:#eee;text-align:left} .pdfdoc .r{text-align:right} .pdfdoc .ok{color:#1f7a45} .pdfdoc .bad{color:#b0362b}
+  </style><div class="pdfdoc"><div class="bar"></div>
+  <h1>Fechamento de caixa — ${h(f.nome)}</h1>
+  <p class="sub">${br(day.data)} (${diaSemana(day.data)}) · Fechado por: ${h(fe.fechadoPor||"—")}${fe.fechadoEmTexto?" · "+h(fe.fechadoEmTexto):""}</p>
+  <h2>1. Conferência</h2><table><tr><th>Item</th><th class="r">Esperado</th><th class="r">Conferido</th><th class="r">Diferença</th><th>Situação</th></tr>
+  ${conf.map(r=>{const ok=Math.abs(r.dif)<0.005;return `<tr><td>${h(r.item)}</td><td class="r">${fmt(r.esp)}</td><td class="r">${fmt(r.conf)}</td><td class="r">${ok?"–":fmt(r.dif)}</td><td class="${ok?"ok":"bad"}"><b>${ok?"OK":(r.dif<0?"FALTA":"SOBRA")}</b></td></tr>`;}).join("")}</table>
+  ${tab("2. Movimento por forma",["Forma","Entradas","Saídas"],fs.map(k=>[FORMAS[k],fmtS(c.E[k]),fmtS(c.S[k])]).concat([["Total",fmt(c.totE),fmt(c.totS)]]),[1,2])}
+  ${tab("3. Referências",["Item","Valor"],[["Abertura em dinheiro",fmt(c.abertDin)],["Abertura em cheques",fmt(c.abertChq)],["Sistema – dinheiro",fmtS(num(sis.din))],["Sistema – PIX",fmtS(num(sis.pix))],["Sistema – cartão",fmtS(num(sis.cart))],["Sistema – cheque",fmtS(num(sis.chq))],["Maquininha – débito",fmtS(num(maq.deb))],["Maquininha – crédito",fmtS(num(maq.cred))],["Maquininha – PIX",fmtS(num(maq.pix))],["Dinheiro contado na gaveta",fmt(c.contado)],["Cheques na gaveta",fmt(c.chqGav)]],[1])}
+  ${tab("4. Contagem da gaveta",["Cédula / moeda","Qtd.","Total"],CEDULAS.filter(([k])=>parseInt(ced[k],10)).map(([k,val,nome])=>[nome,String(parseInt(ced[k],10)),fmt(parseInt(ced[k],10)*val)]).concat([["Total contado","",fmt(c.contado)]]),[1,2])}
+  ${tab("5. Lançamentos do dia",["Hora","Tipo","Descrição","Forma","Entrada","Saída"],lancsAtivos(day).map(l=>[l.hora||"",(TIPOS[l.tipo]||{}).nome||l.tipo,[l.desc,l.recebido?"recebeu "+fmt(l.recebido)+", troco "+fmt(l.troco):"",l.cartao?l.cartao+" "+l.parcelasN+"x":"",l.chequeNum?"cheque nº "+l.chequeNum+(l.bomPara?", bom para "+br(l.bomPara):""):"",l.chqTercEmit?"cheque de "+l.chqTercEmit+(l.chqTercNum?" nº "+l.chqTercNum:"")+(l.bomPara&&l.sentido==="E"?", bom para "+br(l.bomPara):""):"",l.repassadoPara?"repassado para "+l.repassadoPara:"",l.func,l.doc?"nº "+l.doc:"",l.obs,l.oper?"por "+l.oper:""].filter(Boolean).join(" · "),FORMAS[l.forma]||l.forma,l.sentido==="E"?fmt(l.valor):"",l.sentido==="S"?fmt(l.valor):""]),[4,5])}
+  ${fe.obs?`<h2>Observações</h2><p>${h(fe.obs).replace(/\n/g,"<br>")}</p>`:""}
+  <p class="sub" style="margin-top:18px;font-size:8pt">Caixa do Dia · gerado em ${new Date().toLocaleString("pt-BR")}</p>
+  </div>`;
+  return {html, nome:"Fechamento_"+f.nome.replace(/\s+/g,"")+"_"+day.data+".pdf"};
+}
+
+// ---------- CONTAS A PAGAR ----------
+function statusConta(c){ if(c.status==="paga") return "paga"; const t=hoje(); if(c.venc<t) return "vencida"; if(c.venc===t) return "hoje"; return "aberta"; }
+function viewSwitch(){ const n=S.cheques.filter(q=>q.status==="a_compensar").length, m=S.chqTerc.filter(q=>q.status==="em_maos").length; return `<div class="seg" style="max-width:720px;margin-bottom:14px"><button data-cv="contas" aria-pressed="${S.contasView==="contas"}">Contas</button><button data-cv="cheques" aria-pressed="${S.contasView==="cheques"}">Cheques emitidos${n?" ("+n+")":""}</button><button data-cv="terc" aria-pressed="${S.contasView==="terc"}">Cheques de clientes${m?" ("+m+")":""}</button></div>`; }
+function renderContas(){
+  if(S.contasView==="cheques"){ renderCheques(); return; }
+  if(S.contasView==="terc"){ renderChequesTerc(); return; }
+  const v=$("#v-contas"), t=hoje(), sete=addDias(t,7), mes=t.slice(0,7);
+  const all=S.contas.filter(c=>S.contasLoja==="todas"||c.loja===S.contasLoja);
+  const venc=all.filter(c=>statusConta(c)==="vencida"), hj=all.filter(c=>statusConta(c)==="hoje"), prox=all.filter(c=>statusConta(c)==="aberta"&&c.venc<=sete);
+  const pagasMes=all.filter(c=>c.status==="paga"&&c.pagamento&&(c.pagamento.data||"").slice(0,7)===mes);
+  const soma=a=>a.reduce((s,c)=>s+(+(c.status==="paga"&&c.pagamento?c.pagamento.valor:c.valor)||0),0);
+  let lista=all;
+  if(S.contasFiltro==="abertas") lista=all.filter(c=>c.status!=="paga");
+  else if(S.contasFiltro==="vencidas") lista=venc;
+  else if(S.contasFiltro==="semana") lista=all.filter(c=>c.status!=="paga"&&c.venc<=sete);
+  else if(S.contasFiltro==="cartao") lista=all.filter(c=>c.cartao&&c.status!=="paga");
+  else if(S.contasFiltro==="pagas") lista=all.filter(c=>c.status==="paga");
+  lista=lista.slice().sort((a,b)=>S.contasFiltro==="pagas"?((b.pagamento&&b.pagamento.data||"").localeCompare(a.pagamento&&a.pagamento.data||"")):(a.venc||"").localeCompare(b.venc||""));
+  const fBtn=(k,n)=>`<button data-cf="${k}" aria-pressed="${S.contasFiltro===k}">${n}</button>`;
+  const det=v.querySelector("details"), aberto=det?det.open:false;
+  const frentesPag=isAdmin()?FRENTES:[FR[S.perfil]];
+  v.innerHTML=`
+    <div class="titlebar"><h2>Contas a pagar${minhaLoja()?" · "+NOME_LOJA[minhaLoja()]:""}</h2><span class="sub">${S.contas.filter(c=>c.status!=="paga").length} em aberto</span></div>
+    ${viewSwitch()}
+    <div class="tiles">
+      <div class="tile s"><div class="k">Vencidas</div><div class="v num">${fmt(soma(venc))}</div><div class="d">${venc.length} conta(s)</div></div>
+      <div class="tile"><div class="k">Vencem hoje</div><div class="v num">${fmt(soma(hj))}</div><div class="d">${hj.length} conta(s)</div></div>
+      <div class="tile"><div class="k">Próximos 7 dias</div><div class="v num">${fmt(soma(prox))}</div><div class="d">${prox.length} conta(s)</div></div>
+      <div class="tile e"><div class="k">Pagas no mês</div><div class="v num">${fmt(soma(pagasMes))}</div><div class="d">${pagasMes.length} conta(s)</div></div>
+    </div>
+    <details class="card" ${aberto||!S.contas.length?"open":""} style="margin-bottom:14px"><summary>Cadastrar conta</summary>
+      <form id="f-conta" class="stack" autocomplete="off">
+        <div class="row3">
+          <label class="f"><span class="req">Fornecedor</span><input class="inp" id="c-forn"></label>
+          <label class="f"><span class="req">Valor (R$)</span><input class="inp num" id="c-valor" inputmode="decimal" placeholder="0,00"></label>
+          <label class="f"><span class="req">Vencimento</span><input class="inp" id="c-venc" type="date" value="${t}"></label>
+        </div>
+        <div class="row3">
+          <label class="f"><span>Descrição</span><input class="inp" id="c-desc" placeholder="ex.: NF 1234 ração"></label>
+          <label class="f"><span>Loja</span>${selLoja("c-loja")}</label>
+          <label class="f"><span>Repetir</span><select class="inp" id="c-rep">${[1,2,3,4,5,6,12].map(n=>`<option value="${n}">${n===1?"Só esta":n+" meses"}</option>`).join("")}<option value="fixa">Fixa (todo mês)</option></select></label>
+        </div>
+        <label class="f"><span>Nº boleto / nota · observação</span><input class="inp" id="c-doc"></label>
+        <div class="btns"><button class="btn pri" type="submit">Cadastrar conta</button><span class="hint" id="c-msg"></span></div>
+      </form>
+    </details>
+    <div class="filtros">${fBtn("abertas","Em aberto")}${fBtn("vencidas","Vencidas")}${fBtn("semana","Até 7 dias")}${fBtn("cartao","Cartão de crédito")}${fBtn("pagas","Pagas")}${fBtn("todas","Todas")}${botoesLoja("cl",S.contasLoja)}</div>
+    <div class="tablewrap">${lista.length?`<table><thead><tr><th>Vencimento</th><th>Fornecedor</th><th>Loja</th><th class="r">Valor</th><th>Situação</th><th></th></tr></thead><tbody>${
+      lista.map(c=>{const st=statusConta(c), pill={paga:["e","Paga"],vencida:["s","Vencida"],hoje:["w","Vence hoje"],aberta:["","A vencer"]}[st], pg=c.pagamento, pay=S.payingId===c.id;
+        const padrao=isAdmin()?(c.loja==="barreiro"?"fin-barreiro":c.loja==="areias"?"fin-areias":"banco"):S.perfil;
+        return `<tr><td class="num">${br(c.venc)}</td><td style="min-width:170px">${h(c.forn)}${c.fixaId?' <span class="pill t">Fixa</span>':""}${c.desc||c.doc?`<div class="sub2">${h([c.desc,c.doc].filter(Boolean).join(" · "))}</div>`:""}${c.alteracoes&&c.alteracoes.length?`<div class="sub2">alterada em ${h(c.alteracoes[c.alteracoes.length-1].emTexto||"")}${c.alteracoes[c.alteracoes.length-1].antes&&c.alteracoes[c.alteracoes.length-1].antes.valor!=null&&c.alteracoes[c.alteracoes.length-1].antes.valor!=c.valor?" (antes "+fmt(c.alteracoes[c.alteracoes.length-1].antes.valor)+")":""}</div>`:""}${pg?`<div class="sub2">Paga em ${br(pg.data)} · ${h(FR[pg.frente]?FR[pg.frente].nome:pg.frente)} · ${h(FORMAS[pg.forma]||pg.forma)}${pg.valor!=c.valor?" · "+fmt(pg.valor):""}</div>`:""}</td>
+          <td>${h({areias:"Areias",barreiro:"Barreiro",geral:"Geral"}[c.loja]||"")}</td><td class="r num">${fmt(c.valor)}</td><td><span class="pill ${pill[0]}">${pill[1]}</span></td>
+          <td class="r" style="white-space:nowrap">${c.status!=="paga"?`<button class="btn sm loja" data-act="pagar" data-id="${h(c.id)}">${pay?"Fechar":"Pagar"}</button> <button class="btn sm" data-act="alterar" data-id="${h(c.id)}">${S.editId===c.id?"Cancelar":"Alterar"}</button> <button class="linkbtn" data-act="del-conta" data-id="${h(c.id)}">Excluir</button>`:""}</td></tr>
+          ${S.editId===c.id?painelEdicao(c):""}
+          ${pay?`<tr class="paypanel"><td colspan="6"><div class="inner">
+            <label class="f"><span>Pagar por</span><select class="inp" id="p-frente">${frentesPag.map(f=>`<option value="${f.id}" ${f.id===padrao?"selected":""}>${h(f.nome)}</option>`).join("")}</select></label>
+            <label class="f"><span>Forma</span><select class="inp" id="p-forma"></select></label>
+            <label class="f"><span>Data</span><input class="inp" type="date" id="p-data" value="${t}"></label>
+            <label class="f"><span>Valor pago</span><input class="inp num" id="p-valor" inputmode="decimal" value="${h(numStr(c.valor))}"></label>
+            <span id="p-cs-box" hidden style="display:contents"><label class="f"><span class="req">Qual cheque de cliente</span><select class="inp" id="p-cssel"></select></label>
+            <label class="f"><span>Repassado para</span><input class="inp" id="p-cspara" value="${h(c.forn)}"></label></span>
+            <span id="p-chq-box" hidden style="display:contents"><label class="f"><span class="req">Nº do cheque</span><input class="inp" id="p-chnum" inputmode="numeric"></label>
+            <label class="f"><span class="req">Bom para</span><input class="inp" type="date" id="p-chbom" value="${t}"></label>
+            <label class="f"><span>Nominal a</span><input class="inp" id="p-chnom" value="${h(c.forn)}"></label></span>
+            <button class="btn loja" data-act="confirmar-pag" data-id="${h(c.id)}">Confirmar pagamento</button>
+            <span class="hint" id="p-msg" style="flex-basis:100%"></span></div></td></tr>`:""}`;}).join("")
+    }</tbody></table>`:`<div class="empty">Nenhuma conta neste filtro. Cadastre acima as contas com o vencimento; quando pagar, clique em Pagar e ela é lançada na frente escolhida.</div>`}</div>`;
+  if(S.payingId) syncPayForma();
+}
+function painelEdicao(c){
+  if(!S.editOk) return `<tr class="paypanel"><td colspan="6"><div class="inner">
+    <label class="f" style="max-width:320px"><span>Senha do Administrador ou do Banco</span><input class="inp" type="password" id="e-senha" autocomplete="off"></label>
+    <button class="btn pri" data-act="liberar" data-id="${h(c.id)}">Liberar alteração</button>
+    <span class="hint" id="e-msg" style="flex-basis:100%">Para alterar uma conta é preciso a senha do Administrador ou do Banco.</span></div></td></tr>`;
+  const prox=S.contas.filter(o=>o.id!==c.id&&o.status!=="paga"&&o.forn===c.forn&&o.venc>c.venc).length;
+  return `<tr class="paypanel"><td colspan="6"><div class="inner">
+    <label class="f"><span>Fornecedor</span><input class="inp" id="e-forn" value="${h(c.forn)}"></label>
+    <label class="f"><span>Valor (R$)</span><input class="inp num" id="e-valor" inputmode="decimal" value="${h(numStr(c.valor))}"></label>
+    <label class="f"><span>Vencimento</span><input class="inp" type="date" id="e-venc" value="${h(c.venc)}"></label>
+    <label class="f"><span>Descrição</span><input class="inp" id="e-desc" value="${h(c.desc||"")}"></label>
+    <label class="f"><span>Loja</span><select class="inp" id="e-loja">${["areias","barreiro","geral"].map(l=>`<option value="${l}" ${c.loja===l?"selected":""}>${NOME_LOJA[l]}</option>`).join("")}</select></label>
+    <label class="f"><span>Nº boleto / nota</span><input class="inp" id="e-doc" value="${h(c.doc||"")}"></label>
+    ${c.fixaId?`<label style="flex-basis:100%;display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="e-prox" checked> Conta fixa: aplicar também nos próximos meses (inclusive os que ainda vão ser gerados)</label>`
+      :prox?`<label style="flex-basis:100%;display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="e-prox"> Usar o novo valor também nas próximas ${prox} conta(s) em aberto de ${h(c.forn)}</label>`:""}
+    <button class="btn loja" data-act="salvar-edicao" data-id="${h(c.id)}">Salvar alterações</button>
+    ${c.fixaId?`<button class="btn danger" data-act="encerrar-fixa" data-id="${h(c.id)}">Encerrar conta fixa a partir deste mês</button>`:""}
+    <span class="hint" id="e-msg" style="flex-basis:100%">Liberado. A alteração fica registrada na conta.</span></div></td></tr>`;
+}
+function syncPayForma(){ const fr=$("#p-frente"), fo=$("#p-forma"); if(!fr||!fo) return; fo.innerHTML=formasPara("conta",fr.value).filter(f=>f!=="cc").map(f=>`<option value="${f}">${h(FORMAS[f])}</option>`).join(""); syncPayChq(); }
+function syncPayChq(){ const b=$("#p-chq-box"), fo=$("#p-forma"), cs=$("#p-cs-box"), fr=$("#p-frente"), sel=$("#p-cssel"), v=$("#p-valor"); if(!fo) return;
+  if(b) b.hidden=fo.value!=="chqemp";
+  if(cs){ cs.hidden=fo.value!=="chq"; if(fo.value==="chq"&&sel&&fr){ if(!sel.dataset.fr||sel.dataset.fr!==fr.value){ sel.innerHTML=optsChequesMaos(fr.value); sel.dataset.fr=fr.value; } } }
+  if(v) v.readOnly=fo.value==="chq"; if(fo.value==="chq"&&sel&&v){ const q=S.chqTerc.find(x=>x.id===sel.value); if(q) v.value=numStr(q.valor); } }
+async function cadastrarConta(ev){
+  ev.preventDefault(); const g=id=>document.getElementById(id).value.trim(), m=$("#c-msg");
+  const a={forn:g("c-forn"),valor:num(g("c-valor")),venc:g("c-venc"),desc:g("c-desc"),loja:g("c-loja"),doc:g("c-doc"),rep:g("c-rep")==="fixa"?"fixa":(parseInt(g("c-rep"),10)||1)};
+  if(!a.forn||a.valor<=0||!a.venc){ m.textContent="Preencha fornecedor, valor e vencimento."; return; }
+  m.textContent="Salvando…";
+  try{ const r=await call("addConta",a); toast(r.msg); m.textContent=""; ["c-forn","c-valor","c-desc","c-doc"].forEach(id=>document.getElementById(id).value=""); await carregarContas(); }
+  catch(e){ m.textContent=e.message; }
+}
+async function confirmarPagamento(id,btn){
+  const m=$("#p-msg"), a={id,frente:$("#p-frente").value,forma:$("#p-forma").value,data:$("#p-data").value,valor:num($("#p-valor").value),oper:lsGet("cdd.operador")||""};
+  if(!a.data||a.valor<=0){ m.textContent="Confira data e valor."; return; }
+  if(a.forma==="chq"){ const id=$("#p-cssel").value; if(!id){ m.textContent="Escolha qual cheque de cliente está sendo usado."; return; } a.chqTercId=id; a.repassadoPara=$("#p-cspara").value.trim(); }
+  if(a.forma==="chqemp"){ const n=$("#p-chnum").value.trim(), b=$("#p-chbom").value; if(!n||!b){ m.textContent="Informe o número do cheque e o bom para."; return; } a.cheque={numero:n,bomPara:b,nominal:$("#p-chnom").value.trim()}; }
+  btn.disabled=true; m.textContent="Lançando…";
+  try{ const r=await call("pagarConta",a); if(a.forma==="chqemp") carregarCheques(); if(a.forma==="chq") carregarChequesTerc(); S.payingId=null; toast(r.msg); await carregarContas(); if(a.frente===S.frente&&a.data===S.data) carregarDia(true); }
+  catch(e){ m.textContent=e.message; btn.disabled=false; }
+}
+
+// ---------- CHEQUES EMITIDOS ----------
+function statusChq(q){ if(q.status!=="a_compensar") return q.status; return q.bomPara<=hoje()?"hoje":"acomp"; }
+function renderCheques(){
+  const v=$("#v-contas"), t=hoje(), mes=t.slice(0,7), pode=isAdmin()||S.perfil==="banco";
+  const all=S.cheques, ac=all.filter(q=>q.status==="a_compensar"), hj=ac.filter(q=>q.bomPara<=t), compMes=all.filter(q=>q.status==="compensado"&&q.compensacao&&(q.compensacao.data||"").slice(0,7)===mes);
+  const soma=a=>a.reduce((x,q)=>x+(+q.valor||0),0);
+  let lista=all;
+  if(S.chqFiltro==="acomp") lista=ac; else if(S.chqFiltro==="comp") lista=all.filter(q=>q.status==="compensado"); else if(S.chqFiltro==="baixa") lista=all.filter(q=>q.status==="devolvido"||q.status==="cancelado");
+  lista=lista.slice().sort((a,b)=>S.chqFiltro==="acomp"?(a.bomPara||"").localeCompare(b.bomPara||""):(b.bomPara||"").localeCompare(a.bomPara||""));
+  const fBtn=(k,n)=>`<button data-chf="${k}" aria-pressed="${S.chqFiltro===k}">${n}</button>`;
+  const pill={acomp:["","A compensar"],hoje:["w","Compensa hoje"],compensado:["e","Compensado"],devolvido:["s","Devolvido"],cancelado:["s","Cancelado"]};
+  v.innerHTML=`
+    <div class="titlebar"><h2>Cheques emitidos</h2><span class="sub">talão da empresa · ${ac.length} a compensar</span></div>
+    ${viewSwitch()}
+    <div class="tiles">
+      <div class="tile"><div class="k">A compensar</div><div class="v num">${fmt(soma(ac))}</div><div class="d">${ac.length} cheque(s)</div></div>
+      <div class="tile s"><div class="k">Bom para até hoje</div><div class="v num">${fmt(soma(hj))}</div><div class="d">${hj.length} cheque(s)</div></div>
+      <div class="tile e"><div class="k">Compensados no mês</div><div class="v num">${fmt(soma(compMes))}</div><div class="d">${compMes.length} cheque(s)</div></div>
+    </div>
+    <p class="hint" style="margin-bottom:10px">Para emitir, use Pagar conta (ou Pagar nesta aba) com a forma Cheque da empresa. ${pode?"Quando aparecer no extrato, confirme a compensação aqui.":"A compensação é confirmada por quem tem acesso ao Banco."}</p>
+    <div class="filtros">${fBtn("acomp","A compensar")}${fBtn("comp","Compensados")}${fBtn("baixa","Devolvidos e cancelados")}${fBtn("todos","Todos")}</div>
+    <div class="tablewrap">${lista.length?`<table><thead><tr><th>Bom para</th><th>Nº</th><th>Nominal a</th><th>Emitido</th><th class="r">Valor</th><th>Situação</th><th></th></tr></thead><tbody>${
+      lista.map(q=>{const st=statusChq(q), on=S.chqId===q.id;
+        const info=q.status==="compensado"&&q.compensacao?"em "+br(q.compensacao.data):(q.baixa?br(q.baixa.data)+(q.baixa.motivo?" · "+q.baixa.motivo:""):"");
+        return `<tr><td class="num">${br(q.bomPara)}</td><td class="num">${h(q.numero)}</td><td style="min-width:150px">${h(q.nominal)}</td>
+          <td><span class="sub2">${br(q.emissao)} · ${h(FR[q.frente]?FR[q.frente].nome:q.frente)}</span></td><td class="r num">${fmt(q.valor)}</td>
+          <td><span class="pill ${pill[st][0]}">${pill[st][1]}</span>${info?`<div class="sub2">${h(info)}</div>`:""}</td>
+          <td class="r" style="white-space:nowrap">${!pode?"":q.status==="a_compensar"?`<button class="btn sm loja" data-act="chq-abrir" data-id="${h(q.id)}">${on?"Fechar":"Confirmar"}</button>`:q.status==="compensado"?`<button class="linkbtn" data-act="chq-desfazer" data-id="${h(q.id)}">Desfazer</button>`:""}</td></tr>
+          ${on?`<tr class="paypanel"><td colspan="7"><div class="inner">
+            <label class="f"><span>Data da compensação</span><input class="inp" type="date" id="q-data" value="${t}"></label>
+            <button class="btn loja" data-act="chq-compensar" data-id="${h(q.id)}">Confirmar e tirar do Banco</button>
+            <label class="f"><span>Motivo (se voltou ou foi cancelado)</span><input class="inp" id="q-motivo" placeholder="ex.: sem fundos, rasurado"></label>
+            <button class="btn danger" data-act="chq-devolvido" data-id="${h(q.id)}">Devolvido</button>
+            <button class="btn" data-act="chq-cancelado" data-id="${h(q.id)}">Cancelado</button>
+            <span class="hint" id="q-msg" style="flex-basis:100%">Devolvido ou cancelado: a conta paga com esse cheque volta para em aberto.</span></div></td></tr>`:""}`;}).join("")
+    }</tbody></table>`:`<div class="empty">Nenhum cheque neste filtro.</div>`}</div>`;
+}
+
+// ---------- CHEQUES DE CLIENTES ----------
+function renderChequesTerc(){
+  const v=$("#v-contas"), t=hoje(), all=S.chqTerc;
+  const maos=all.filter(q=>q.status==="em_maos"), venc=maos.filter(q=>q.bomPara<=t), rep=all.filter(q=>q.status==="repassado"), dep=all.filter(q=>q.status==="depositado");
+  const soma=a=>a.reduce((x,q)=>x+(+q.valor||0),0);
+  let lista=all;
+  if(S.ctFiltro==="maos") lista=maos; else if(S.ctFiltro==="rep") lista=rep; else if(S.ctFiltro==="dep") lista=dep; else if(S.ctFiltro==="dev") lista=all.filter(q=>q.status==="devolvido");
+  lista=lista.slice().sort((a,b)=>S.ctFiltro==="maos"?(a.bomPara||"").localeCompare(b.bomPara||""):((b.destino&&b.destino.data)||b.recebidoEm||"").localeCompare((a.destino&&a.destino.data)||a.recebidoEm||""));
+  const fBtn=(k,n)=>`<button data-ctf="${k}" aria-pressed="${S.ctFiltro===k}">${n}</button>`;
+  const pill={em_maos:["","Em mãos"],repassado:["t","Repassado"],depositado:["e","Depositado"],devolvido:["s","Devolvido"]};
+  v.innerHTML=`
+    <div class="titlebar"><h2>Cheques de clientes${minhaLoja()?" · "+NOME_LOJA[minhaLoja()]:""}</h2><span class="sub">${maos.length} em mãos · ${fmt(soma(maos))}</span></div>
+    ${viewSwitch()}
+    <div class="tiles">
+      <div class="tile"><div class="k">Em mãos</div><div class="v num">${fmt(soma(maos))}</div><div class="d">${maos.length} cheque(s)</div></div>
+      <div class="tile s"><div class="k">Bom para até hoje</div><div class="v num">${fmt(soma(venc))}</div><div class="d">${venc.length} já podem ser depositados</div></div>
+      <div class="tile e"><div class="k">Repassados</div><div class="v num">${fmt(soma(rep))}</div><div class="d">${rep.length} cheque(s)</div></div>
+    </div>
+    <p class="hint" style="margin-bottom:10px">O cheque entra aqui quando é recebido com a forma Cheque de cliente. Para usar, escolha a forma Cheque de cliente num pagamento, transferência ou depósito e selecione o cheque.</p>
+    <div class="filtros">${fBtn("maos","Em mãos")}${fBtn("rep","Repassados")}${fBtn("dep","Depositados")}${fBtn("dev","Devolvidos")}${fBtn("todos","Todos")}</div>
+    <div class="tablewrap">${lista.length?`<table><thead><tr><th>Bom para</th><th>Emitente</th><th>Recebido</th><th>Onde está / para quem foi</th><th class="r">Valor</th><th>Situação</th><th></th></tr></thead><tbody>${
+      lista.map(q=>{const on=S.ctId===q.id, d=q.destino;
+        const onde=q.status==="em_maos"?(FR[q.frente]?FR[q.frente].nome:q.frente):q.status==="repassado"&&d?"Para "+(d.para||"—")+" · "+br(d.data)+(FR[d.frente]?" · "+FR[d.frente].nome:""):q.status==="depositado"&&d?"Banco · "+br(d.data):q.devolucao?br(q.devolucao.data)+(q.devolucao.motivo?" · "+q.devolucao.motivo:""):"";
+        return `<tr><td class="num">${br(q.bomPara)}</td><td style="min-width:140px">${h(q.emitente)}<div class="sub2">${h([q.numero?"nº "+q.numero:"",q.banco].filter(Boolean).join(" · "))}</div></td>
+          <td><span class="sub2">${br(q.recebidoEm)} · ${h(FR[q.recebidoFrente]?FR[q.recebidoFrente].nome:"")}${q.cliente?"<br>"+h(q.cliente):""}</span></td>
+          <td style="min-width:160px">${h(onde)}</td><td class="r num">${fmt(q.valor)}</td><td><span class="pill ${pill[q.status][0]}">${pill[q.status][1]}</span></td>
+          <td class="r" style="white-space:nowrap">${q.status!=="devolvido"?`<button class="linkbtn" data-act="ct-abrir" data-id="${h(q.id)}">${on?"Fechar":"Devolvido"}</button>`:""}</td></tr>
+          ${on?`<tr class="paypanel"><td colspan="7"><div class="inner"><label class="f"><span>Motivo da devolução</span><input class="inp" id="ct-motivo" placeholder="ex.: sem fundos"></label>
+            <button class="btn danger" data-act="ct-devolver" data-id="${h(q.id)}">Marcar como devolvido</button><span class="hint" id="ct-msg" style="flex-basis:100%">Use quando o cheque voltar sem pagamento. A cobrança do cliente fica por sua conta.</span></div></td></tr>`:""}`;}).join("")
+    }</tbody></table>`:`<div class="empty">Nenhum cheque neste filtro.</div>`}</div>`;
+}
+
+// ---------- BOLETOS A RECEBER ----------
+function statusRec(b){ if(b.status==="recebido") return "recebido"; const t=hoje(); if(b.venc<t) return "vencido"; if(b.venc===t) return "hoje"; return "aberto"; }
+function renderReceber(){
+  const v=$("#v-receber"), t=hoje(), sete=addDias(t,7), mes=t.slice(0,7);
+  const all=S.receber.filter(b=>S.rcLoja==="todas"||b.loja===S.rcLoja);
+  const venc=all.filter(b=>statusRec(b)==="vencido"), hj=all.filter(b=>statusRec(b)==="hoje"), prox=all.filter(b=>statusRec(b)==="aberto"&&b.venc<=sete);
+  const recMes=all.filter(b=>b.status==="recebido"&&b.recebimento&&(b.recebimento.data||"").slice(0,7)===mes);
+  const soma=a=>a.reduce((x,b)=>x+(+(b.status==="recebido"&&b.recebimento?b.recebimento.valor:b.valor)||0),0);
+  let lista=all;
+  if(S.rcFiltro==="abertos") lista=all.filter(b=>b.status!=="recebido");
+  else if(S.rcFiltro==="vencidos") lista=venc;
+  else if(S.rcFiltro==="semana") lista=all.filter(b=>b.status!=="recebido"&&b.venc<=sete);
+  else if(S.rcFiltro==="recebidos") lista=all.filter(b=>b.status==="recebido");
+  lista=lista.slice().sort((a,b)=>S.rcFiltro==="recebidos"?((b.recebimento&&b.recebimento.data||"").localeCompare(a.recebimento&&a.recebimento.data||"")):(a.venc||"").localeCompare(b.venc||""));
+  const fBtn=(k,n)=>`<button data-rf="${k}" aria-pressed="${S.rcFiltro===k}">${n}</button>`;
+  const det=v.querySelector("details"), aberto=det?det.open:false;
+  const abertosTodos=S.receber.filter(b=>b.status!=="recebido");
+  v.innerHTML=`
+    <div class="titlebar"><h2>Boletos a receber${minhaLoja()?" · "+NOME_LOJA[minhaLoja()]:""}</h2><span class="sub">${abertosTodos.length} em aberto · ${fmt(soma(abertosTodos))}</span></div>
+    <div class="tiles">
+      <div class="tile s"><div class="k">Vencidos</div><div class="v num">${fmt(soma(venc))}</div><div class="d">${venc.length} boleto(s)</div></div>
+      <div class="tile"><div class="k">Vencem hoje</div><div class="v num">${fmt(soma(hj))}</div><div class="d">${hj.length} boleto(s)</div></div>
+      <div class="tile"><div class="k">Próximos 7 dias</div><div class="v num">${fmt(soma(prox))}</div><div class="d">${prox.length} boleto(s)</div></div>
+      <div class="tile e"><div class="k">Recebidos no mês</div><div class="v num">${fmt(soma(recMes))}</div><div class="d">${recMes.length} boleto(s), já no Banco</div></div>
+    </div>
+    <details class="card" ${aberto||!S.receber.length?"open":""} style="margin-bottom:14px"><summary>Registrar boleto emitido</summary>
+      <form id="f-boleto" class="stack" autocomplete="off">
+        <div class="row3">
+          <label class="f"><span class="req">Cliente</span><input class="inp" id="b-cli"></label>
+          <label class="f"><span class="req">Valor total (R$)</span><input class="inp num" id="b-valor" inputmode="decimal" placeholder="0,00"></label>
+          <label class="f"><span class="req">Vencimento (1ª parcela)</span><input class="inp" id="b-venc" type="date"></label>
+        </div>
+        <div class="row3">
+          <label class="f"><span>Nº boleto / nota</span><input class="inp" id="b-doc"></label>
+          <label class="f"><span>Loja</span>${selLoja("b-loja")}</label>
+          <label class="f"><span>Parcelas</span>${selParc("b-parc")}</label>
+        </div>
+        <div class="btns"><button class="btn pri" type="submit">Registrar boleto</button><span class="hint" id="b-msg"></span></div>
+      </form>
+    </details>
+    <div class="filtros">${fBtn("abertos","Em aberto")}${fBtn("vencidos","Vencidos")}${fBtn("semana","Até 7 dias")}${fBtn("recebidos","Recebidos")}${fBtn("todos","Todos")}${botoesLoja("rl",S.rcLoja)}</div>
+    <div class="tablewrap">${lista.length?`<table><thead><tr><th>Vencimento</th><th>Cliente</th><th>Loja</th><th class="r">Valor</th><th>Situação</th><th></th></tr></thead><tbody>${
+      lista.map(b=>{const st=statusRec(b), pill={recebido:["e","Recebido"],vencido:["s","Vencido"],hoje:["w","Vence hoje"],aberto:["","A receber"]}[st], rc=b.recebimento, on=S.recId===b.id;
+        return `<tr><td class="num">${br(b.venc)}</td><td style="min-width:170px">${h(b.cliente)}<div class="sub2">${h(["emitido "+br(b.emissao),b.parcela?"parcela "+b.parcela:"",b.doc?"nº "+b.doc:""].filter(Boolean).join(" · "))}</div>${rc?`<div class="sub2">Recebido em ${br(rc.data)} no Banco${rc.valor!=b.valor?" · "+fmt(rc.valor):""}</div>`:""}</td>
+          <td>${h({areias:"Areias",barreiro:"Barreiro",geral:"Geral"}[b.loja]||"")}</td><td class="r num">${fmt(b.valor)}</td><td><span class="pill ${pill[0]}">${pill[1]}</span></td>
+          <td class="r" style="white-space:nowrap">${b.status!=="recebido"?`<button class="btn sm loja" data-act="rec-abrir" data-id="${h(b.id)}">${on?"Fechar":"Confirmar pagamento"}</button> <button class="linkbtn" data-act="del-bol" data-id="${h(b.id)}">Excluir</button>`:`<button class="linkbtn" data-act="rec-desfazer" data-id="${h(b.id)}">Desfazer</button>`}</td></tr>
+          ${on?`<tr class="paypanel"><td colspan="6"><div class="inner">
+            <label class="f"><span>Data do pagamento</span><input class="inp" type="date" id="r-data" value="${t}"></label>
+            <label class="f"><span>Valor recebido</span><input class="inp num" id="r-valor" inputmode="decimal" value="${h(numStr(b.valor))}"></label>
+            <button class="btn loja" data-act="rec-confirmar" data-id="${h(b.id)}">Confirmar e lançar no Banco</button>
+            <span class="hint" id="r-msg" style="flex-basis:100%">O valor entra no Banco no dia do pagamento. Juros ou desconto: ajuste o valor recebido.</span></div></td></tr>`:""}`;}).join("")
+    }</tbody></table>`:`<div class="empty">Nenhum boleto neste filtro. Registre acima cada boleto emitido; quando o cliente pagar, clique em Confirmar pagamento.</div>`}</div>`;
+}
+async function cadastrarBoleto(ev){
+  ev.preventDefault(); const g=id=>document.getElementById(id).value.trim(), m=$("#b-msg");
+  const a={cliente:g("b-cli"),valor:num(g("b-valor")),venc:g("b-venc"),doc:g("b-doc"),loja:g("b-loja"),n:parseInt(g("b-parc"),10)||1,oper:lsGet("cdd.operador")||""};
+  if(!a.cliente||a.valor<=0||!a.venc){ m.textContent="Preencha cliente, valor e vencimento."; return; }
+  m.textContent="Salvando…";
+  try{ const r=await call("addBoleto",a); toast(r.msg); m.textContent=""; ["b-cli","b-valor","b-venc","b-doc"].forEach(id=>document.getElementById(id).value=""); await carregarReceber(); }
+  catch(e){ m.textContent=e.message; }
+}
+
+// ---------- HISTÓRICO (administrador) ----------
+function renderHist(){
+  const v=$("#v-hist");
+  if(!isAdmin()){ v.innerHTML=`<div class="empty">Somente o administrador vê o histórico.</div>`; return; }
+  const hf=S.hf, cfg=S.config.geral||{}, comSenha=S.config.senhas||[];
+  v.innerHTML=`
+    <div class="titlebar"><h2>Histórico e fluxo</h2><span class="sub" id="h-stamp"></span></div>
+    <div class="histbar">
+      <label class="f"><span>De</span><input class="inp" type="date" id="hf-de" value="${hf.de}"></label>
+      <label class="f"><span>Até</span><input class="inp" type="date" id="hf-ate" value="${hf.ate}"></label>
+      <div class="btns"><button class="btn sm" data-per="hoje">Hoje</button><button class="btn sm" data-per="7">7 dias</button><button class="btn sm" data-per="mes">Este mês</button><button class="btn sm" data-per="mesant">Mês passado</button></div>
+    </div>
+    <div class="filtros">${FRENTES.map(f=>`<button data-hfr="${f.id}" aria-pressed="${hf.frentes.includes(f.id)}">${h(f.nome)}</button>`).join("")}</div>
+    <div class="histbar">
+      <label class="f"><span>Tipo</span><select class="inp" id="hf-tipo"><option value="">Todos</option>${Object.entries(TIPOS).filter(([k])=>k!=="boleto").map(([k,t])=>`<option value="${k}" ${hf.tipo===k?"selected":""}>${h(t.nome)}</option>`).join("")}</select></label>
+      <label class="f" style="flex:1"><span>Buscar</span><input class="inp" id="hf-q" value="${h(hf.q)}" placeholder="cliente, fornecedor, funcionário, nº"></label>
+      <div class="btns"><button class="btn" data-act="h-atualizar">Atualizar</button><button class="btn" data-act="h-csv">Baixar CSV</button></div>
+    </div>
+    <div id="h-body"><div class="empty">Carregando o histórico…</div></div>
+    <div class="card sect"><h3>Senhas de acesso</h3><p class="hint">As senhas ficam no Supabase, em <b>Table Editor › senhas</b>, na coluna <b>senha</b>. Para trocar, edite lá. Quem estiver conectado com a senha antiga precisa entrar de novo.</p>
+      <div class="formas">${Object.keys(PERFIS).map(k=>`<span class="chip">${h(PERFIS[k])} ${comSenha.includes(k)?'<b class="dif-ok">definida</b>':'<b class="dif-bad">sem senha</b>'}</span>`).join("")}</div></div>
+    <details class="card sect"><summary>Configurações</summary>
+      <form id="f-cfg" class="stack">
+        <p class="hint">Saldos de partida: quanto havia em cada frente na data de início do controle. Os saldos atuais somam esses valores com todos os lançamentos a partir dessa data.</p>
+        <label class="f" style="max-width:220px"><span>Início do controle</span><input class="inp" type="date" id="cf-inicio" value="${h(cfg.dataInicio||"")}"></label>
+        <div class="tablewrap"><table><thead><tr><th>Frente</th><th>Dinheiro</th><th>Cheques</th></tr></thead><tbody>${FRENTES.map(f=>{const si=(cfg.saldoIni||{})[f.id]||{};return f.id==="banco"
+          ?`<tr><td>Banco</td><td colspan="2"><input class="inp num" id="cf-${f.id}-din" inputmode="decimal" value="${h(numStr(si.din))}" placeholder="saldo do extrato"></td></tr>`
+          :`<tr><td>${h(f.nome)}</td><td><input class="inp num" id="cf-${f.id}-din" inputmode="decimal" value="${h(numStr(si.din))}"></td><td><input class="inp num" id="cf-${f.id}-chq" inputmode="decimal" value="${h(numStr(si.chq))}"></td></tr>`;}).join("")}</tbody></table></div>
+        <label class="f"><span>Funcionários (um por linha)</span><textarea class="inp" id="cf-func" rows="4">${h((cfg.funcionarios||[]).join("\n"))}</textarea></label>
+        <div class="btns"><button class="btn pri" type="submit">Salvar configurações</button><span class="hint" id="cf-msg"></span></div>
+      </form></details>`;
+  if(!S.hist) carregarHist(); else renderHistBody();
+}
+async function carregarHist(){
+  if(S.histLoading) return; S.histLoading=true;
+  try{
+    const r=await call("hist");
+    const docs={}; FRENTES.forEach(f=>docs[f.id]={});
+    r.lancs.forEach(l=>{ const d=docs[l.frente]&&(docs[l.frente][l.data]=docs[l.frente][l.data]||{data:l.data,lanc:{},fech:null}); if(d) d.lanc[l.id]=l; });
+    r.fechs.forEach(f=>{ if(!docs[f.frente]) return; const d=docs[f.frente][f.data]=docs[f.frente][f.data]||{data:f.data,lanc:{},fech:null}; d.fech=f; });
+    S.hist={docs:Object.fromEntries(FRENTES.map(f=>[f.id,Object.values(docs[f.id]).sort((a,b)=>a.data.localeCompare(b.data))])), em:r.em};
+    S.config.geral=r.geral;
+  }catch(e){ const b=$("#h-body"); if(b) b.innerHTML=`<div class="banner bad">Não consegui carregar o histórico: ${h(e.message)}</div>`; }
+  S.histLoading=false; if(S.hist) renderHistBody();
+}
+function histLancs(){
+  const out=[], hf=S.hf, q=hf.q.toLowerCase();
+  for(const f of FRENTES){ if(!hf.frentes.includes(f.id)) continue;
+    for(const d of S.hist.docs[f.id]||[]){ if(d.data<hf.de||d.data>hf.ate) continue;
+      for(const l of lancsAtivos(d)){ if(hf.tipo&&l.tipo!==hf.tipo) continue;
+        if(q&&![l.desc,l.func,l.doc,l.obs,l.oper,l.cartao].join(" ").toLowerCase().includes(q)) continue;
+        out.push(Object.assign({},l,{frente:f.id,data:d.data})); } } }
+  return out.sort((a,b)=>a.data.localeCompare(b.data)||(a.hora||"").localeCompare(b.hora||""));
+}
+function renderHistBody(){
+  const b=$("#h-body"); if(!b||!S.hist) return;
+  $("#h-stamp").textContent="atualizado às "+S.hist.em;
+  const cfg=S.config.geral||{}, ini=cfg.dataInicio||"";
+  const bal={banco:{total:num(((cfg.saldoIni||{}).banco||{}).din)}};
+  FRENTES.filter(f=>f.id!=="banco").forEach(f=>{const si=(cfg.saldoIni||{})[f.id]||{}; bal[f.id]={din:num(si.din),chq:num(si.chq)};});
+  for(const f of FRENTES) for(const d of S.hist.docs[f.id]||[]){ if(ini&&d.data<ini) continue; for(const l of lancsAtivos(d)) aplicaSaldo(bal,f.id,l); }
+  const tiles=FRENTES.map(f=>f.id==="banco"
+    ?`<div class="tile banco"><div class="k">Banco</div><div class="v num">${fmt(bal.banco.total)}</div><div class="d">depósitos, PIX, cartão e boletos − pagamentos</div></div>`
+    :`<div class="tile ${f.loja}"><div class="k">${h(f.nome)}</div><div class="v num">${fmt(bal[f.id].din+bal[f.id].chq)}</div><div class="d">${fmt(bal[f.id].din)} dinheiro · ${fmt(bal[f.id].chq)} cheques</div></div>`).join("");
+  const ls=histLancs(), porF={}; FRENTES.forEach(f=>porF[f.id]={E:0,S:0,TE:0,TS:0});
+  const porForma={}, porTipo={}; let ccTot=0;
+  for(const l of ls){
+    if(l.forma==="cc"){ if(l.sentido==="S") ccTot+=l.valor; continue; }
+    const ehT=l.tipo==="transf"||l.tipo==="deposito", p=porF[l.frente];
+    if(l.sentido==="E"){ ehT?p.TE+=l.valor:p.E+=l.valor; } else { ehT?p.TS+=l.valor:p.S+=l.valor; }
+    if(!ehT){ const pf=porForma[l.forma]=porForma[l.forma]||{E:0,S:0}; pf[l.sentido]+=l.valor; if(l.sentido==="S") porTipo[l.tipo]=(porTipo[l.tipo]||0)+l.valor; }
+  }
+  const fsel=FRENTES.filter(f=>S.hf.frentes.includes(f.id));
+  const tot=fsel.reduce((a,f)=>({E:a.E+porF[f.id].E,S:a.S+porF[f.id].S}),{E:0,S:0});
+  const fechs=[]; for(const f of fsel) if(f.id!=="banco") for(const d of S.hist.docs[f.id]||[]){ if(d.data<S.hf.de||d.data>S.hf.ate) continue; fechs.push({f,d}); }
+  fechs.sort((a,b)=>b.d.data.localeCompare(a.d.data));
+  const pagas=S.contas.filter(c=>c.status==="paga"&&c.pagamento&&c.pagamento.data>=S.hf.de&&c.pagamento.data<=S.hf.ate);
+  const abertas=S.contas.filter(c=>c.status!=="paga");
+  const recPer=S.receber.filter(x=>x.status==="recebido"&&x.recebimento&&x.recebimento.data>=S.hf.de&&x.recebimento.data<=S.hf.ate);
+  const recAb=S.receber.filter(x=>x.status!=="recebido");
+  b.innerHTML=`
+    <div class="sect"><h3>Saldos atuais</h3><div class="tiles">${tiles}</div>
+      <p class="hint">${ini?"Desde "+br(ini)+", somando os saldos de partida.":"Sem data de início: soma todos os lançamentos (configure os saldos de partida abaixo)."} PIX e cartão recebidos contam no Banco.</p></div>
+    <div class="sect"><h3>Fluxo de ${br(S.hf.de)} a ${br(S.hf.ate)}</h3>
+      <div class="tiles"><div class="tile e"><div class="k">Recebido</div><div class="v num">${fmt(tot.E)}</div><div class="d">sem transferências internas</div></div>
+        <div class="tile s"><div class="k">Pago / saídas</div><div class="v num">${fmt(tot.S)}</div><div class="d">contas, funcionários, sangrias, despesas</div></div>
+        <div class="tile"><div class="k">Compras no cartão</div><div class="v num">${fmt(ccTot)}</div><div class="d">entram no fluxo quando a parcela é paga</div></div>
+        <div class="tile"><div class="k">Resultado</div><div class="v num" style="color:${tot.E-tot.S>=0?"var(--in)":"var(--out)"}">${fmt(tot.E-tot.S)}</div><div class="d">recebido − pago</div></div></div>
+      <div class="tablewrap"><table><thead><tr><th>Frente</th><th class="r">Entradas</th><th class="r">Saídas</th><th class="r">Transf. recebidas</th><th class="r">Transf. enviadas</th><th class="r">Resultado</th></tr></thead><tbody>${
+        fsel.map(f=>{const p=porF[f.id];return `<tr><td>${h(f.nome)}</td><td class="r num e">${fmtS(p.E)}</td><td class="r num s">${fmtS(p.S)}</td><td class="r num">${fmtS(p.TE)}</td><td class="r num">${fmtS(p.TS)}</td><td class="r num">${fmt(p.E+p.TE-p.S-p.TS)}</td></tr>`;}).join("")}</tbody></table></div>
+      <div class="cols" style="margin-top:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))">
+        <div class="tablewrap"><table><thead><tr><th>Forma</th><th class="r">Entradas</th><th class="r">Saídas</th></tr></thead><tbody>${Object.keys(FORMAS).filter(k=>porForma[k]).map(k=>`<tr><td>${h(FORMAS[k])}</td><td class="r num e">${fmtS(porForma[k].E)}</td><td class="r num s">${fmtS(porForma[k].S)}</td></tr>`).join("")||`<tr><td colspan="3" class="muted">Sem movimento.</td></tr>`}</tbody></table></div>
+        <div class="tablewrap"><table><thead><tr><th>Saídas por tipo</th><th class="r">Valor</th></tr></thead><tbody>${Object.keys(porTipo).map(k=>`<tr><td>${h(TIPOS[k]?TIPOS[k].nome:k)}</td><td class="r num s">${fmt(porTipo[k])}</td></tr>`).join("")||`<tr><td colspan="2" class="muted">Sem saídas.</td></tr>`}</tbody></table></div>
+      </div></div>
+    <div class="sect"><h3>Fechamentos</h3><div class="tablewrap">${fechs.length?`<table><thead><tr><th>Dia</th><th>Frente</th><th>Situação</th><th class="r">Dinheiro esperado</th><th class="r">Contado</th><th class="r">Diferença</th><th>Fechado por</th><th>PDF</th></tr></thead><tbody>${
+      fechs.map(({f,d})=>{const fe=d.fech||{}, rs=fe.resumo||{}, fechado=fe.status==="fechado", dif=rs.difDin||0;
+        return `<tr><td class="num">${br(d.data)}</td><td>${h(f.nome)}</td><td>${fechado?`<span class="pill ${rs.ok?"e":"w"}">${rs.ok?"Fechado OK":"Fechado c/ diferença"}</span>`:`<span class="pill s">Não fechado</span>`}</td>
+          <td class="r num">${fechado?fmt(rs.espDin):""}</td><td class="r num">${fechado?fmt(rs.contado):""}</td><td class="r num ${Math.abs(dif)<0.005?"":"dif-bad"}">${fechado?(Math.abs(dif)<0.005?"–":fmt(dif)):""}</td>
+          <td>${h(fe.fechadoPor||"")}</td><td>${fe.pdf&&(fe.pdf.path||fe.pdf.url)?`<button class="linkbtn" style="color:inherit;text-decoration:underline" data-act="abrir-pdf" data-f="${h(f.id)}" data-d="${h(d.data)}">abrir</button>`:""}</td></tr>`;}).join("")}</tbody></table>`:`<div class="empty">Nenhum dia de caixa no período.</div>`}</div></div>
+    <div class="sect"><h3>Contas e boletos</h3><div class="tiles">
+      <div class="tile s"><div class="k">Contas pagas no período</div><div class="v num">${fmt(pagas.reduce((a,c)=>a+(+c.pagamento.valor||0),0))}</div><div class="d">${pagas.length} conta(s)</div></div>
+      <div class="tile e"><div class="k">Boletos recebidos no período</div><div class="v num">${fmt(recPer.reduce((a,x)=>a+(+x.recebimento.valor||0),0))}</div><div class="d">já somados no Banco</div></div>
+      <div class="tile"><div class="k">Boletos a receber</div><div class="v num">${fmt(recAb.reduce((a,x)=>a+(+x.valor||0),0))}</div><div class="d">${recAb.length} em aberto, ${recAb.filter(x=>x.venc<hoje()).length} vencido(s)</div></div>
+      <div class="tile"><div class="k">Cheques a compensar</div><div class="v num">${fmt(S.cheques.filter(q=>q.status==="a_compensar").reduce((a,q)=>a+(+q.valor||0),0))}</div><div class="d">${S.cheques.filter(q=>q.status==="a_compensar").length} cheque(s) do talão</div></div>
+      <div class="tile"><div class="k">Contas em aberto</div><div class="v num">${fmt(abertas.reduce((a,c)=>a+(+c.valor||0),0))}</div><div class="d">${abertas.length} conta(s), ${abertas.filter(c=>c.venc<hoje()).length} vencida(s)</div></div></div></div>
+    <div class="sect"><h3>Lançamentos (${ls.length})</h3><div class="tablewrap">${ls.length?`<table><thead><tr><th>Dia</th><th>Hora</th><th>Frente</th><th>Tipo</th><th>Descrição</th><th>Forma</th><th class="r">Entrada</th><th class="r">Saída</th></tr></thead><tbody>${
+      ls.slice(-600).reverse().map(l=>{const d=[l.func,l.doc?"nº "+l.doc:"",l.oper?"por "+l.oper:""].filter(Boolean).join(" · ");
+        return `<tr><td class="num">${br(l.data).slice(0,5)}</td><td class="num">${h(l.hora||"")}</td><td>${h(FR[l.frente].nome)}</td><td><span class="pill ${l.sentido==="E"?"e":(TIPOS[l.tipo]&&TIPOS[l.tipo].cls==="t"?"t":"s")}">${h(TIPOS[l.tipo]?TIPOS[l.tipo].nome:l.tipo)}</span></td>
+        <td style="min-width:170px">${h(l.desc||"")}${d?`<div class="sub2">${h(d)}</div>`:""}</td><td>${h(FORMAS[l.forma]||l.forma)}</td><td class="r num e">${l.sentido==="E"?fmt(l.valor):""}</td><td class="r num s">${l.sentido==="S"?fmt(l.valor):""}</td></tr>`;}).join("")}</tbody></table>`:`<div class="empty">Nenhum lançamento com esses filtros.</div>`}</div>
+      ${ls.length>600?`<p class="hint">Mostrando os 600 mais recentes. O CSV traz todos.</p>`:""}</div>`;
+}
+async function exportCsv(btn){
+  if(!S.hist) return; const ls=histLancs();
+  const esc=s=>'"'+String(s==null?"":s).replace(/"/g,'""')+'"';
+  const csv=[["Dia","Hora","Frente","Tipo","Sentido","Forma","Valor","Descrição","Funcionário","Nº doc","Observação","Lançado por"].map(esc).join(";")]
+    .concat(ls.map(l=>[br(l.data),l.hora,FR[l.frente].nome,TIPOS[l.tipo]?TIPOS[l.tipo].nome:l.tipo,l.sentido==="E"?"Entrada":"Saída",FORMAS[l.forma]||l.forma,String(l.valor).replace(".",","),l.desc,l.func,l.doc,l.obs,l.oper].map(esc).join(";"))).join("\r\n");
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));
+  a.download="fluxo_"+S.hf.de+"_a_"+S.hf.ate+".csv"; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+}
+async function salvarConfig(ev){
+  ev.preventDefault(); const m=$("#cf-msg"), g=id=>document.getElementById(id).value.trim();
+  const cfg={dataInicio:g("cf-inicio"),saldoIni:{},funcionarios:g("cf-func").split(/\n+/).map(s=>s.trim()).filter(Boolean)};
+  FRENTES.forEach(f=>{ cfg.saldoIni[f.id]={din:num(g("cf-"+f.id+"-din"))}; if(f.id!=="banco") cfg.saldoIni[f.id].chq=num(g("cf-"+f.id+"-chq")); });
+  m.textContent="Salvando…";
+  try{ await call("salvarConfig",{cfg}); S.config=await call("config"); m.textContent="Configurações salvas."; renderHistBody(); }catch(e){ m.textContent=e.message; }
+}
+function setPeriodo(p){
+  const t=hoje(), hf=S.hf;
+  if(p==="hoje"){hf.de=t;hf.ate=t;} else if(p==="7"){hf.de=addDias(t,-6);hf.ate=t;}
+  else if(p==="mes"){hf.de=t.slice(0,8)+"01";hf.ate=t;}
+  else if(p==="mesant"){const d=new Date(t+"T12:00:00");d.setDate(1);d.setMonth(d.getMonth()-1);hf.de=iso(d);hf.ate=iso(new Date(d.getFullYear(),d.getMonth()+1,0));}
+  $("#hf-de").value=hf.de; $("#hf-ate").value=hf.ate; renderHistBody();
+}
+
+// ---------- eventos ----------
+const armar=(t,txt,orig)=>{ if(t.dataset.armed==="1") return true; t.dataset.armed="1"; t.textContent=txt; setTimeout(()=>{ if(t.isConnected){ t.dataset.armed=""; t.textContent=orig; } },4000); return false; };
+document.addEventListener("click", async ev=>{
+  const t=ev.target.closest("button"); if(!t) return;
+  if(t.dataset.lgc){ S.lg.cidade=t.dataset.lgc; syncLogin(); $("#lg-senha").focus(); return; }
+  if(t.dataset.lgs){ S.lg.sub=t.dataset.lgs; syncLogin(); $("#lg-senha").focus(); return; }
+  if(t.dataset.cidade){ const c=t.dataset.cidade; setFrente(c==="banco"?"banco":"cx-"+c); return; }
+  if(t.dataset.sub){ const loja=FR[S.frente].loja; if(loja!=="banco") setFrente(t.dataset.sub+"-"+loja); return; }
+  if(t.dataset.tab){ setTab(t.dataset.tab); return; }
+  if(t.dataset.tipo){ S.tipo=t.dataset.tipo; renderLancForm(); const vv=$("#l-valor"); if(vv) vv.focus(); return; }
+  if(t.dataset.cv){ S.contasView=t.dataset.cv; renderContas(); return; }
+  if(t.dataset.ctf){ S.ctFiltro=t.dataset.ctf; renderContas(); return; }
+  if(t.dataset.chf){ S.chqFiltro=t.dataset.chf; renderContas(); return; }
+  if(t.dataset.cf){ S.contasFiltro=t.dataset.cf; renderContas(); return; }
+  if(t.dataset.cl){ S.contasLoja=t.dataset.cl; renderContas(); return; }
+  if(t.dataset.rf){ S.rcFiltro=t.dataset.rf; renderReceber(); return; }
+  if(t.dataset.rl){ S.rcLoja=t.dataset.rl; renderReceber(); return; }
+  if(t.dataset.hfr){ const a=S.hf.frentes, id=t.dataset.hfr; S.hf.frentes=a.includes(id)?a.filter(x=>x!==id):a.concat(id); t.setAttribute("aria-pressed",S.hf.frentes.includes(id)); renderHistBody(); return; }
+  if(t.dataset.per){ setPeriodo(t.dataset.per); return; }
+  const act=t.dataset.act; if(!act) return;
+  if(act==="ver-senha"){ const i=$("#lg-senha"), ver=i.type==="password"; i.type=ver?"text":"password"; t.setAttribute("aria-pressed",ver); t.setAttribute("aria-label",ver?"Ocultar senha":"Mostrar senha"); t.querySelector("span").textContent=ver?"Ocultar":"Mostrar"; i.focus(); return; }
+  if(act==="abrir-pdf"){ const w=window.open("about:blank","_blank");
+    try{ const r=await call("linkPdf",{frente:t.dataset.f,data:t.dataset.d}); if(w) w.location.href=r.url; else window.location.href=r.url; }
+    catch(e){ if(w) w.close(); toast(e.message); } return; }
+  if(act==="sair") sair();
+  else if(act==="dia-prev") setData(addDias(S.data,-1));
+  else if(act==="dia-next") setData(addDias(S.data,1));
+  else if(act==="del"){ if(!armar(t,"Confirmar exclusão","Excluir")) return; t.disabled=true;
+    try{ const r=await call("excluirLanc",{id:t.dataset.id}); toast(r.msg||"Excluído."); await carregarDia(true); carregarContas(); carregarReceber(); carregarCheques(); carregarChequesTerc(); }catch(e){ toast(e.message); t.disabled=false; } }
+  else if(act==="fechar") fecharCaixa(t);
+  else if(act==="ajustar") ajustarSaldo(t);
+  else if(act==="reabrir") reabrir();
+  else if(act==="pdf-drive") pdfDeNovo(t);
+  else if(act==="pagar"){ S.payingId=S.payingId===t.dataset.id?null:t.dataset.id; S.editId=null; S.editOk=false; S.editSenha=""; renderContas(); }
+  else if(act==="confirmar-pag") confirmarPagamento(t.dataset.id,t);
+  else if(act==="alterar"){ if(S.editId===t.dataset.id){ S.editId=null; } else { S.editId=t.dataset.id; S.editOk=false; S.editSenha=""; S.payingId=null; } renderContas(); const e=$("#e-senha"); if(e) e.focus(); }
+  else if(act==="liberar"){ const m=$("#e-msg"), s=$("#e-senha").value; if(!s){ m.textContent="Digite a senha."; return; } t.disabled=true; m.textContent="Conferindo…";
+    try{ await call("liberarEdicao",{senha:s}); S.editOk=true; S.editSenha=s; renderContas(); const f=$("#e-valor"); if(f) f.focus(); }catch(e){ m.textContent=e.message; t.disabled=false; } }
+  else if(act==="salvar-edicao"){ const m=$("#e-msg"), g=id=>(document.getElementById(id)||{}).value||"";
+    const campos={forn:g("e-forn").trim(),valor:num(g("e-valor")),venc:g("e-venc"),desc:g("e-desc").trim(),loja:g("e-loja"),doc:g("e-doc").trim()};
+    if(!campos.forn||campos.valor<=0||!campos.venc){ m.textContent="Preencha fornecedor, valor e vencimento."; return; }
+    t.disabled=true; m.textContent="Salvando…";
+    try{ const r=await call("editarConta",{id:t.dataset.id,senha:S.editSenha,campos,aplicarProximas:!!(document.getElementById("e-prox")||{}).checked}); S.editId=null; S.editOk=false; S.editSenha=""; toast(r.msg); await carregarContas(); }
+    catch(e){ m.textContent=e.message; t.disabled=false; } }
+  else if(act==="encerrar-fixa"){ if(!armar(t,"Confirmar encerramento","Encerrar conta fixa a partir deste mês")) return; const m=$("#e-msg");
+    try{ const r=await call("encerrarFixa",{id:t.dataset.id,senha:S.editSenha}); S.editId=null; S.editOk=false; S.editSenha=""; toast(r.msg); await carregarContas(); }catch(e){ m.textContent=e.message; } }
+  else if(act==="del-conta"){ if(!armar(t,"Confirmar","Excluir")) return; try{ const r=await call("excluirConta",{id:t.dataset.id}); toast(r.msg||"Excluída."); carregarContas(); }catch(e){ toast(e.message); } }
+  else if(act==="ct-abrir"){ S.ctId=S.ctId===t.dataset.id?null:t.dataset.id; renderContas(); }
+  else if(act==="ct-devolver"){ if(!armar(t,"Confirmar devolução","Marcar como devolvido")) return; try{ const r=await call("devolverChequeTerc",{id:t.dataset.id,motivo:$("#ct-motivo").value.trim()}); S.ctId=null; toast(r.msg); carregarChequesTerc(); }catch(e){ $("#ct-msg").textContent=e.message; } }
+  else if(act==="chq-abrir"){ S.chqId=S.chqId===t.dataset.id?null:t.dataset.id; renderContas(); }
+  else if(act==="chq-compensar"){ const m=$("#q-msg"); t.disabled=true; m.textContent="Lançando…";
+    try{ const r=await call("compensarCheque",{id:t.dataset.id,data:$("#q-data").value,oper:lsGet("cdd.operador")||""}); S.chqId=null; toast(r.msg); await carregarCheques(); if(S.frente==="banco") carregarDia(true); }catch(e){ m.textContent=e.message; t.disabled=false; } }
+  else if(act==="chq-devolvido"||act==="chq-cancelado"){ if(!armar(t,"Confirmar",act==="chq-devolvido"?"Devolvido":"Cancelado")) return; const m=$("#q-msg");
+    try{ const r=await call("baixarCheque",{id:t.dataset.id,status:act==="chq-devolvido"?"devolvido":"cancelado",motivo:$("#q-motivo").value.trim()}); S.chqId=null; toast(r.msg); await carregarCheques(); carregarContas(); }catch(e){ m.textContent=e.message; } }
+  else if(act==="chq-desfazer"){ if(!armar(t,"Confirmar desfazer","Desfazer")) return; try{ const r=await call("desfazerCompensacao",{id:t.dataset.id}); toast(r.msg); await carregarCheques(); if(S.frente==="banco") carregarDia(true); }catch(e){ toast(e.message); } }
+  else if(act==="rec-abrir"){ S.recId=S.recId===t.dataset.id?null:t.dataset.id; renderReceber(); }
+  else if(act==="rec-confirmar"){ const m=$("#r-msg"), a={id:t.dataset.id,data:$("#r-data").value,valor:num($("#r-valor").value),oper:lsGet("cdd.operador")||""};
+    if(!a.data||a.valor<=0){ m.textContent="Confira data e valor."; return; } t.disabled=true; m.textContent="Lançando…";
+    try{ const r=await call("confirmarReceb",a); S.recId=null; toast(r.msg); await carregarReceber(); if(S.frente==="banco") carregarDia(true); }catch(e){ m.textContent=e.message; t.disabled=false; } }
+  else if(act==="rec-desfazer"){ if(!armar(t,"Confirmar desfazer","Desfazer")) return; try{ const r=await call("desfazerReceb",{id:t.dataset.id}); toast(r.msg); carregarReceber(); }catch(e){ toast(e.message); } }
+  else if(act==="del-bol"){ if(!armar(t,"Confirmar","Excluir")) return; try{ const r=await call("excluirBoleto",{id:t.dataset.id}); toast(r.msg||"Excluído."); carregarReceber(); }catch(e){ toast(e.message); } }
+  else if(act==="h-atualizar"){ S.hist=null; $("#h-body").innerHTML=`<div class="empty">Carregando o histórico…</div>`; carregarContas(); carregarReceber(); carregarCheques(); carregarChequesTerc(); carregarHist(); }
+  else if(act==="h-csv") exportCsv(t);
+});
+document.addEventListener("submit", async ev=>{
+  const id=ev.target.id; ev.preventDefault();
+  if(id==="f-lanc") salvarLanc(ev);
+  else if(id==="f-conta") cadastrarConta(ev);
+  else if(id==="f-boleto") cadastrarBoleto(ev);
+  else if(id==="f-cfg") salvarConfig(ev);
+  else if(id==="f-login"){
+    const perfil=perfilLogin(), m=$("#lg-msg");
+    if(!perfil){ m.textContent="Escolha a cidade (ou Administrador)."; return; }
+    m.textContent="Entrando…"; $("#lg-entrar").disabled=true;
+    try{ await entrar(perfil,$("#lg-senha").value); m.textContent=""; }catch(e){ m.textContent=e.message; }
+    $("#lg-entrar").disabled=false;
+  }
+});
+document.addEventListener("input", ev=>{
+  const id=ev.target.id||"";
+  if(id==="aj-real"){ atualizaDifAjuste(); return; }
+  if(id==="l-valor"||id==="l-receb"){ updateTroco(); updateCC(); updateBolPrev(); return; }
+  if(id==="l-cartao"){ const sug=vencCartaoSugerido(ev.target.value.trim()), vv=$("#l-ccvenc"); if(sug&&vv&&!vv.value){ vv.value=sug; updateCC(); } return; }
+  if(id.startsWith("fx-")){ readFechInputs(); updateFechCalc(); agendaRascunho(); }
+  else if(id==="hf-q"){ S.hf.q=ev.target.value; clearTimeout(S.qT); S.qT=setTimeout(renderHistBody,250); }
+});
+document.addEventListener("change", ev=>{
+  const id=ev.target.id||"";
+  if(id==="dia") setData(ev.target.value);
+  else if(id==="l-forma"){ updateTroco(); updateCC(); updateChq(); }
+  else if(id==="p-forma"||id==="p-cssel") syncPayChq();
+  else if(id==="l-cssel") aplicaChequeSel();
+  else if(id==="l-ccvenc"||id==="l-parc"){ updateCC(); updateBolPrev(); }
+  else if(id==="l-venc") updateBolPrev();
+  else if(id==="l-conta"){ const c=S.contas.find(x=>x.id===ev.target.value); if(c){ $("#l-valor").value=numStr(c.valor); $("#l-desc").value=c.forn+(c.desc?" · "+c.desc:""); $("#l-doc").value=c.doc||""; updateCC(); } }
+  else if(id==="p-frente"){ const sel=$("#p-cssel"); if(sel) sel.dataset.fr=""; syncPayForma(); }
+  else if(id==="hf-de"){ S.hf.de=ev.target.value; renderHistBody(); }
+  else if(id==="hf-ate"){ S.hf.ate=ev.target.value; renderHistBody(); }
+  else if(id==="hf-tipo"){ S.hf.tipo=ev.target.value; renderHistBody(); }
+});
+
+// ---------- início ----------
+(function boot(){
+  let sess=null; try{ sess=JSON.parse(lsGet("cdd.sess")||"null"); }catch(e){}
+  if(sess&&sess.token&&temGoogle){
+    S.token=sess.token; S.perfil=sess.perfil;
+    call("config").then(cfg=>{ S.config=cfg; iniciarSessao({token:sess.token,perfil:cfg.perfil}); }).catch(()=>mostrarLogin());
+  } else mostrarLogin();
+})();
+})();
+
+</script>
+</body>
+</html>
